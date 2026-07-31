@@ -7,9 +7,8 @@ local VirtualUser = game:GetService("VirtualUser")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- 기존 GUI 초기화
 for _, v in pairs(CoreGui:GetChildren()) do
-    if v.Name == "MobileMM2Hub" or v.Name == "SpinCrosshairGui" or v.Name == "GunEspFolder" then 
+    if v.Name == "MobileMM2Hub" or v.Name == "SpinCrosshairGui" or v.Name == "GunEspFolder" or v.Name == "ValoStyle_Min" then 
         v:Destroy() 
     end
 end
@@ -21,9 +20,8 @@ screenGui.IgnoreGuiInset = true
 screenGui.DisplayOrder = 999999
 screenGui.Parent = CoreGui
 
--- 메인 UI 프레임
 local MainFrame = Instance.new("Frame", screenGui)
-MainFrame.Size = UDim2.new(0, 500, 0, 360)
+MainFrame.Size = UDim2.new(0, 520, 0, 360)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(13, 11, 20)
@@ -32,7 +30,6 @@ MainFrame.ClipsDescendants = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(138, 43, 226)
 
--- 상단 바
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Size = UDim2.new(1, 0, 0, 30)
 TopBar.BackgroundColor3 = Color3.fromRGB(18, 15, 28)
@@ -58,7 +55,6 @@ CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 12
 CloseBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
--- 사이드바 (탭 메뉴)
 local Sidebar = Instance.new("Frame", MainFrame)
 Sidebar.Size = UDim2.new(0, 40, 1, -30)
 Sidebar.Position = UDim2.new(0, 0, 0, 30)
@@ -69,7 +65,6 @@ SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 SidebarLayout.Padding = UDim.new(0, 6)
 Instance.new("UIPadding", Sidebar).PaddingTop = UDim.new(0, 10)
 
--- 컨텐츠 영역
 local ContentArea = Instance.new("Frame", MainFrame)
 ContentArea.Size = UDim2.new(1, -40, 1, -30)
 ContentArea.Position = UDim2.new(0, 40, 0, 30)
@@ -183,18 +178,17 @@ local function GetPlayerRole(player)
     if not player or not player.Character then return "Innocent", Color3.fromRGB(50, 255, 100) end
     for _, item in ipairs(player.Character:GetChildren()) do
         if item:IsA("Tool") and (item.Name:lower():find("knife") or item:FindFirstChild("KnifeServer")) then return "Murderer", Color3.fromRGB(255, 50, 50) end
-        if item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("revolver")) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
+        if item:IsA("Tool") and (item.Name:lower():find("gun") or item:FindFirstChild("GunServer")) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
     end
     if player:FindFirstChild("Backpack") then
         for _, item in ipairs(player.Backpack:GetChildren()) do
             if item:IsA("Tool") and (item.Name:lower():find("knife") or item:FindFirstChild("KnifeServer")) then return "Murderer", Color3.fromRGB(255, 50, 50) end
-            if item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("revolver")) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
+            if item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("GunServer")) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
         end
     end
     return "Innocent", Color3.fromRGB(50, 255, 100)
 end
 
--- 설정값
 local Config = {
     MurderAim = false, CurveBullets = false, PredictionEnabled = false, Prediction = 0.15,
     TriggerBot = false, TriggerBotFOV = 50, Wallbang = false, AutoTeleportGun = false,
@@ -203,12 +197,10 @@ local Config = {
     RainbowBullet = false, BulletColor = "Normal", Speed = false, Jump = false, Noclip = false, KillAllTP = false
 }
 
--- FOV 원 생성 (정중앙 고정)
+-- FOV 원 (정중앙 고정)
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
 fovCircle.Thickness = 1.5
-fovCircle.NumSides = 64
-fovCircle.Filled = false
 fovCircle.Radius = 120
 fovCircle.Color = Color3.fromRGB(255, 255, 255)
 
@@ -312,7 +304,24 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 총 드랍 줍기 및 보라색 ESP
+-- 벽뚫샷
+task.spawn(function()
+    while task.wait(1) do
+        if Config.Wallbang then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    local isPlayer = v.Parent and (v.Parent:FindFirstChild("Humanoid") or (v.Parent.Parent and v.Parent.Parent:FindFirstChild("Humanoid")))
+                    if not isPlayer and not v:IsDescendantOf(Camera) then
+                        v:SetAttribute("WasWallbang", true)
+                        v.CanQuery = false
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- 보라색 총 ESP 및 텔포 줍기
 local gunEspFolder = Instance.new("Folder", screenGui)
 gunEspFolder.Name = "GunEspFolder"
 local isTeleportingGun = false
@@ -350,7 +359,72 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 스피드, 점프, 녹클립, 킬올 기능
+-- 플레이어 ESP (Box, Name, Skeleton)
+local espFolder = Instance.new("Folder", screenGui)
+espFolder.Name = "Valo_ESP_Exact"
+
+local function DrawLine(p1, p2, parent, color, thickness)
+    local line = Instance.new("Frame", parent)
+    line.BackgroundColor3 = color
+    line.BorderSizePixel = 0
+    line.AnchorPoint = Vector2.new(0.5, 0.5)
+    local dist = (p2 - p1).Magnitude
+    line.Size = UDim2.new(0, thickness, 0, dist)
+    line.Position = UDim2.new(0, (p1.X + p2.X)/2, 0, (p1.Y + p2.Y)/2)
+    line.Rotation = math.deg(math.atan2(p2.Y - p1.Y, p2.X - p1.X)) - 90
+end
+
+RunService.RenderStepped:Connect(function()
+    espFolder:ClearAllChildren()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            local char = p.Character
+            local hrp = char.HumanoidRootPart
+            local head = char:FindFirstChild("Head")
+            local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            if onScreen then
+                local roleName, roleColor = GetPlayerRole(p)
+                if Config.ESP_Skeleton and head and char:FindFirstChild("Torso") then
+                    local torso = char.Torso
+                    local neckW = Camera:WorldToViewportPoint((torso.CFrame * CFrame.new(0, 1, 0)).Position)
+                    local pelvisW = Camera:WorldToViewportPoint((torso.CFrame * CFrame.new(0, -1, 0)).Position)
+                    local headW = Camera:WorldToViewportPoint(head.Position)
+                    DrawLine(Vector2.new(headW.X, headW.Y), Vector2.new(neckW.X, neckW.Y), espFolder, roleColor, 1.5)
+                    DrawLine(Vector2.new(neckW.X, neckW.Y), Vector2.new(pelvisW.X, pelvisW.Y), espFolder, roleColor, 1.5)
+                end
+                if Config.ESP_Box or Config.ESP_Name then
+                    local rootPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+                    local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                    local h = math.abs(headPos.Y - rootPos.Y)
+                    if h < 3000 and h > 5 then
+                        local w = h / 2
+                        if Config.ESP_Box then
+                            local box = Instance.new("Frame", espFolder)
+                            box.Size = UDim2.new(0, w, 0, h)
+                            box.Position = UDim2.new(0, hrpPos.X - w/2, 0, headPos.Y)
+                            box.BackgroundTransparency = 1
+                            local stroke = Instance.new("UIStroke", box)
+                            stroke.Color = roleColor
+                            stroke.Thickness = 1.2
+                        end
+                        if Config.ESP_Name then
+                            local lbl = Instance.new("TextLabel", espFolder)
+                            lbl.Size = UDim2.new(0, 120, 0, 15)
+                            lbl.Position = UDim2.new(0, hrpPos.X - 60, 0, headPos.Y - 18)
+                            lbl.BackgroundTransparency = 1
+                            lbl.Text = p.Name .. " [" .. roleName .. "]"
+                            lbl.TextColor3 = roleColor
+                            lbl.Font = Enum.Font.GothamBold
+                            lbl.TextSize = 10
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- 이동 기능 (스피드, 점프, 녹클립, 킬올)
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
@@ -374,7 +448,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- 탭 생성 (Combat, Visual, FX, Misc)
+-- 탭 구성
 local left1, right1 = CreateTab("🎯")
 AddHeader(left1, "Combat & Aim")
 AddToggle(left1, "🔴 Aim Lock On Murderer", function(v) Config.MurderAim = v end)
@@ -390,6 +464,7 @@ local left2, right2 = CreateTab("👁")
 AddHeader(left2, "Visuals & ESP")
 AddToggle(left2, "ESP Box", function(v) Config.ESP_Box = v end)
 AddToggle(left2, "ESP Name", function(v) Config.ESP_Name = v end)
+AddToggle(left2, "💀 R6 Detailed Skeleton", function(v) Config.ESP_Skeleton = v end)
 AddToggle(left2, "🟣 ESP Dropped Gun", function(v) Config.ESP_GunDrop = v end)
 AddHeader(right2, "FOV & Crosshair")
 AddToggle(right2, "⭕ Draw FOV Circle", function(v) Config.DrawFOV = v end)
