@@ -45,7 +45,6 @@ Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 11
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- 닫기 버튼 (창 끄기)
 local CloseBtn = Instance.new("TextButton", TopBar)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -30, 0, 0)
@@ -56,7 +55,6 @@ CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 12
 CloseBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
--- 최소화(창 끄고 켜기용 'S' 미니 아이콘) 버튼
 local MinBtn = Instance.new("TextButton", TopBar)
 MinBtn.Size = UDim2.new(0, 30, 0, 30)
 MinBtn.Position = UDim2.new(1, -60, 0, 0)
@@ -280,10 +278,11 @@ local Config = {
     RainbowBullet = false, BulletColor = "Normal", Speed = false, Jump = false, Noclip = false, KillAllTP = false
 }
 
--- FOV 원
+-- 🔥 FOV 원 내부가 비어있도록 Filled = false 명시 및 정중앙 고정
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
 fovCircle.Thickness = 1.5
+fovCircle.Filled = false
 fovCircle.Radius = 120
 fovCircle.Color = Color3.fromRGB(255, 255, 255)
 
@@ -302,7 +301,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 조준점 및 스핀 조준점 GUI
+-- 🔥 돌아가는 스핀 조준점 및 기본 조준점을 화면 '정중앙'에 고정
 local crosshairGui = Instance.new("ScreenGui", CoreGui)
 crosshairGui.Name = "SpinCrosshairGui"
 local crosshairHolder = Instance.new("Frame", crosshairGui)
@@ -327,14 +326,15 @@ RunService.RenderStepped:Connect(function()
         for idx, line in ipairs(cLines) do
             if Config.SpinCrosshair then
                 local angle = (idx * math.pi / 2) + t
-                local dist = 15 + math.sin(tick() * 5) * 5
+                local dist = 12 + math.sin(tick() * 5) * 3
                 line.Size = UDim2.new(0, 8, 0, 3)
+                -- 중심점(0.5, 0.5)을 기준으로 정확히 회전하도록 수정
                 line.Position = UDim2.new(0.5, math.cos(angle) * dist - 4, 0.5, math.sin(angle) * dist - 1.5)
             else
-                if idx == 1 then line.Size = UDim2.new(0, 2, 0, 10); line.Position = UDim2.new(0.5, -1, 0, 0)
-                elseif idx == 2 then line.Size = UDim2.new(0, 2, 0, 10); line.Position = UDim2.new(0.5, -1, 0.5, 5)
-                elseif idx == 3 then line.Size = UDim2.new(0, 10, 0, 2); line.Position = UDim2.new(0, 0, 0.5, -1)
-                elseif idx == 4 then line.Size = UDim2.new(0, 10, 0, 2); line.Position = UDim2.new(0.5, 5, 0.5, -1)
+                if idx == 1 then line.Size = UDim2.new(0, 2, 0, 10); line.Position = UDim2.new(0.5, -1, 0.5, -12)
+                elseif idx == 2 then line.Size = UDim2.new(0, 2, 0, 10); line.Position = UDim2.new(0.5, -1, 0.5, 2)
+                elseif idx == 3 then line.Size = UDim2.new(0, 10, 0, 2); line.Position = UDim2.new(0.5, -12, 0.5, -1)
+                elseif idx == 4 then line.Size = UDim2.new(0, 10, 0, 2); line.Position = UDim2.new(0.5, 2, 0.5, -1)
                 end
             end
         end
@@ -404,14 +404,14 @@ task.spawn(function()
     end
 end)
 
--- 📌 화면 위에 네모나게 뜨는 '총 텔포 버튼' 생성 (드랍된 총이 없을 시 텔포 불가 기능 포함)
+-- 총 텔포 버튼
 local tpButtonGui = Instance.new("ScreenGui", CoreGui)
 tpButtonGui.Name = "TeleportGunGui"
 tpButtonGui.ResetOnSpawn = false
 
 local tpBtn = Instance.new("TextButton", tpButtonGui)
 tpBtn.Size = UDim2.new(0, 130, 0, 45)
-tpBtn.Position = UDim2.new(0, 20, 0.7, 0) -- 화면 왼쪽에 배치
+tpBtn.Position = UDim2.new(0, 20, 0.7, 0)
 tpBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
 tpBtn.Text = "🔫 총 텔포하기"
 tpBtn.TextColor3 = Color3.fromRGB(180, 0, 255)
@@ -439,14 +439,13 @@ tpBtn.MouseButton1Click:Connect(function()
         task.wait(0.1)
         hrp.CFrame = origPos
     else
-        -- 드랍된 총이 없을 때 알림 텍스트 효과
         tpBtn.Text = "❌ 총 없음!"
         task.wait(1)
         tpBtn.Text = "🔫 총 텔포하기"
     end
 end)
 
--- 보라색 총 ESP 및 자동 텔포 줍기 옵션 처리
+-- 보라색 총 ESP 및 자동 텔포 줍기
 local gunEspFolder = Instance.new("Folder", screenGui)
 gunEspFolder.Name = "GunEspFolder"
 local isTeleportingGun = false
@@ -484,7 +483,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 플레이어 ESP (Box, Name, Skeleton)
+-- 플레이어 ESP
 local espFolder = Instance.new("Folder", screenGui)
 espFolder.Name = "Valo_ESP_Exact"
 
@@ -573,7 +572,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- 탭 구성 (조절 슬라이더 및 기능들)
+-- 탭 구성
 local left1, right1 = CreateTab("🎯")
 AddHeader(left1, "Combat & Aim")
 AddToggle(left1, "🔴 Aim Lock On Murderer", function(v) Config.MurderAim = v end)
