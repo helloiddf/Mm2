@@ -13,10 +13,8 @@ local LocalMouse = LocalPlayer:GetMouse()
 --------------------------------------------------------------------
 -- 🛡️ [종결급 안티치트 우회 시스템 (Anti-Cheat Bypass)]
 --------------------------------------------------------------------
--- 1. GUI 은닉 (최신 인젝터 표준: CoreGui 감지 방어)
 local HiddenUI = (gethui and gethui()) or (get_hidden_gui and get_hidden_gui()) or CoreGui
 
--- 기존 UI 싹 다 초기화
 for _, v in pairs(HiddenUI:GetChildren()) do
     if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "ValoStyle_Min" or v.Name == "WordChain_Hub" then
         v:Destroy()
@@ -26,37 +24,25 @@ if LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Launcher_Hub") then
     LocalPlayer.PlayerGui:ClearAllChildren()
 end
 
--- 2. 메타테이블 훅(Metatable Hook) - 안티치트 통신 차단 및 스푸핑
 pcall(function()
     local gm = getrawmetatable(game)
     if not gm then return end
-    
     if setreadonly then setreadonly(gm, false) end
     local oldNamecall = gm.__namecall
     local oldIndex = gm.__index
 
-    -- 서버로 보내는 데이터 변조 (킥 방어 및 리포트 차단)
     gm.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
-        local args = {...}
-
-        -- 게임이 플레이어를 Kick 시키려는 명령 차단
-        if method == "Kick" or method == "kick" then
-            return nil
-        end
-        
-        -- 안티치트가 밴/에러 로그를 서버로 전송하려는 경우 중간에서 삭제
+        if method == "Kick" or method == "kick" then return nil end
         if method == "FireServer" then
             local remoteName = tostring(self):lower()
             if remoteName:find("ban") or remoteName:find("report") or remoteName:find("log") or remoteName:find("anticheat") then
                 return nil
             end
         end
-
-        return oldNamecall(self, unpack(args))
+        return oldNamecall(self, ...)
     end)
 
-    -- 안티치트가 플레이어의 속도나 점프력을 검사할 때 정상 수치(16, 50)로 속임
     gm.__index = newcclosure(function(self, key)
         if tostring(self) == "Humanoid" then
             if key == "WalkSpeed" then return 16 end
@@ -64,13 +50,12 @@ pcall(function()
         end
         return oldIndex(self, key)
     end)
-    
     if setreadonly then setreadonly(gm, true) end
 end)
 --------------------------------------------------------------------
 
 --------------------------------------------------------------------
--- 🚀 1. 최초 실행 런처 UI (종결급 애니메이션 적용)
+-- 🚀 1. 최초 실행 런처 UI
 --------------------------------------------------------------------
 local launcherGui = Instance.new("ScreenGui")
 launcherGui.Name = "Launcher_Hub"
@@ -135,12 +120,7 @@ CreateLauncherBtn(115, "💬 AUTO WORD CHAIN (한방단어)", Color3.fromRGB(80,
     LoadWordChain()
 end)
 
---------------------------------------------------------------------
--- 💬 2. 끝말잇기 (Word Chain) 빈 로직 (구조 유지용)
---------------------------------------------------------------------
-local function LoadWordChain()
-    -- (기존 끝말잇기 로직 동일)
-end
+local function LoadWordChain() end
 
 --------------------------------------------------------------------
 -- 🔪 3. 머더 미스터리 2 (최종 통합본)
@@ -151,7 +131,7 @@ function LoadMurderMystery()
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
     screenGui.DisplayOrder = 999999
-    screenGui.Parent = HiddenUI -- 🔥 여기도 HiddenUI(안티치트 은닉)로 설정
+    screenGui.Parent = HiddenUI 
 
     local MainFrame = Instance.new("Frame", screenGui)
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
@@ -430,7 +410,6 @@ function LoadMurderMystery()
         return "Innocent", Color3.fromRGB(50, 255, 100)
     end
 
-    -- ⚙️ CONFIG 시스템
     local Config = {
         MurderAim = false,
         PredictionEnabled = false, Prediction = 0.15,
@@ -451,11 +430,12 @@ function LoadMurderMystery()
     fovCircle.Radius = 100
     fovCircle.Color = Color3.fromRGB(255, 255, 255)
 
+    -- 🔥 FOV 정중앙 고정
     RunService.RenderStepped:Connect(function()
         if Config.DrawFOV then
             fovCircle.Visible = true
             fovCircle.Radius = Config.FOVSize
-            fovCircle.Position = Vector2.new(LocalMouse.X, LocalMouse.Y + 36) 
+            fovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
             if Config.RainbowFOV then
                 local hue = tick() % 5 / 5
                 fovCircle.Color = Color3.fromHSV(hue, 1, 1)
@@ -467,6 +447,7 @@ function LoadMurderMystery()
         end
     end)
 
+    -- 🔥 벽뚫샷 로직
     task.spawn(function()
         while task.wait(1) do
             if Config.Wallbang then
@@ -495,6 +476,7 @@ function LoadMurderMystery()
         end
     end
 
+    -- 🔥 Aim & Curve Bullets
     RunService.RenderStepped:Connect(function()
         if Config.MurderAim or Config.CurveBullets then
             for _, p in ipairs(Players:GetPlayers()) do
@@ -502,12 +484,10 @@ function LoadMurderMystery()
                     if GetPlayerRole(p) == "Murderer" then
                         local targetHRP = p.Character.HumanoidRootPart
                         local targetHead = p.Character.Head
-                        
                         local targetPos = targetHead.Position
                         if Config.PredictionEnabled then
                             targetPos = targetPos + (targetHRP.AssemblyLinearVelocity * Config.Prediction)
                         end
-                        
                         Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
                         break
                     end
@@ -516,21 +496,21 @@ function LoadMurderMystery()
         end
     end)
 
+    -- 🔥 TriggerBot (중앙 기준)
     local triggerDebounce = false
     RunService.RenderStepped:Connect(function()
         if Config.TriggerBot and not triggerDebounce then
             local char = LocalPlayer.Character
             local equippedTool = char and char:FindFirstChildOfClass("Tool")
-            
             if equippedTool and (equippedTool.Name:lower():find("gun") or equippedTool.Name:lower():find("revolver")) then
                 for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                         if GetPlayerRole(p) == "Murderer" then
                             local headPos, onScreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
                             if onScreen then
-                                local mouseVec2 = Vector2.new(LocalMouse.X, LocalMouse.Y)
+                                local centerVec2 = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
                                 local targetVec2 = Vector2.new(headPos.X, headPos.Y)
-                                if (mouseVec2 - targetVec2).Magnitude <= Config.TriggerBotFOV then
+                                if (centerVec2 - targetVec2).Magnitude <= Config.TriggerBotFOV then
                                     triggerDebounce = true
                                     if mouse1click then mouse1click() else VirtualUser:Button1Down(Vector2.new(0,0)) end
                                     task.wait(0.15)
@@ -544,6 +524,49 @@ function LoadMurderMystery()
         end
     end)
 
+    -- 🔥 수정된 이동 및 텔레포트 기능 (Speed, Infinite Jump, Kill All 완벽 작동)
+    RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+            local humanoid = char.Humanoid
+            local hrp = char.HumanoidRootPart
+
+            -- 1. 스피드 핵 (속도 강제 적용)
+            if Config.Speed then
+                humanoid.WalkSpeed = 32
+            else
+                humanoid.WalkSpeed = 16
+            end
+
+            -- 2. 노클립
+            if Config.Noclip then
+                for _, v in pairs(char:GetDescendants()) do 
+                    if v:IsA("BasePart") then v.CanCollide = false end 
+                end
+                if hrp.Velocity.Y < -50 then
+                    hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+                end
+            end
+
+            -- 3. 킬 올 (전원 텔레포트 킬)
+            if Config.KillAllTP then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
+                        p.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, 0, -3)
+                    end
+                end
+            end
+        end
+    end)
+
+    -- 4. 무한 점프 (인피니트 점프)
+    UserInputService.JumpRequest:Connect(function()
+        if Config.Jump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end)
+
+    -- ✨ 총알 색상 변경
     RunService.Heartbeat:Connect(function()
         if Config.RainbowBullet or Config.BulletColor ~= "Normal" then
             local char = LocalPlayer.Character
@@ -616,22 +639,10 @@ function LoadMurderMystery()
                         DrawLine(Vector2.new(pelvisW.X, pelvisW.Y), Vector2.new(lhW.X, lhW.Y), espFolder, roleColor, 1.5)
                         DrawLine(Vector2.new(pelvisW.X, pelvisW.Y), Vector2.new(rhW.X, rhW.Y), espFolder, roleColor, 1.5)
 
-                        if lArm then 
-                            local laW = Camera:WorldToViewportPoint((lArm.CFrame * CFrame.new(0, -0.8, 0)).Position) 
-                            DrawLine(Vector2.new(lsW.X, lsW.Y), Vector2.new(laW.X, laW.Y), espFolder, roleColor, 1.5) 
-                        end
-                        if rArm then 
-                            local raW = Camera:WorldToViewportPoint((rArm.CFrame * CFrame.new(0, -0.8, 0)).Position) 
-                            DrawLine(Vector2.new(rsW.X, rsW.Y), Vector2.new(raW.X, raW.Y), espFolder, roleColor, 1.5) 
-                        end
-                        if lLeg then 
-                            local llW = Camera:WorldToViewportPoint((lLeg.CFrame * CFrame.new(0, -0.8, 0)).Position) 
-                            DrawLine(Vector2.new(lhW.X, lhW.Y), Vector2.new(llW.X, llW.Y), espFolder, roleColor, 1.5) 
-                        end
-                        if rLeg then 
-                            local rlW = Camera:WorldToViewportPoint((rLeg.CFrame * CFrame.new(0, -0.8, 0)).Position) 
-                            DrawLine(Vector2.new(rhW.X, rhW.Y), Vector2.new(rlW.X, rlW.Y), espFolder, roleColor, 1.5) 
-                        end
+                        if lArm then local laW = Camera:WorldToViewportPoint((lArm.CFrame * CFrame.new(0, -0.8, 0)).Position) DrawLine(Vector2.new(lsW.X, lsW.Y), Vector2.new(laW.X, laW.Y), espFolder, roleColor, 1.5) end
+                        if rArm then local raW = Camera:WorldToViewportPoint((rArm.CFrame * CFrame.new(0, -0.8, 0)).Position) DrawLine(Vector2.new(rsW.X, rsW.Y), Vector2.new(raW.X, raW.Y), espFolder, roleColor, 1.5) end
+                        if lLeg then local llW = Camera:WorldToViewportPoint((lLeg.CFrame * CFrame.new(0, -0.8, 0)).Position) DrawLine(Vector2.new(lhW.X, lhW.Y), Vector2.new(llW.X, llW.Y), espFolder, roleColor, 1.5) end
+                        if rLeg then local rlW = Camera:WorldToViewportPoint((rLeg.CFrame * CFrame.new(0, -0.8, 0)).Position) DrawLine(Vector2.new(rhW.X, rhW.Y), Vector2.new(rlW.X, rlW.Y), espFolder, roleColor, 1.5) end
 
                         local headRadius = math.abs(Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.6, 0)).Y - Camera:WorldToViewportPoint(head.Position - Vector3.new(0, 0.6, 0)).Y)
                         local circle = Instance.new("Frame", espFolder)
