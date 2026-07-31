@@ -8,7 +8,7 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 for _, v in pairs(CoreGui:GetChildren()) do
-    if v.Name == "MobileMM2Hub" or v.Name == "SpinCrosshairGui" or v.Name == "GunEspFolder" or v.Name == "ValoStyle_Min" then 
+    if v.Name == "MobileMM2Hub" or v.Name == "SpinCrosshairGui" or v.Name == "GunEspFolder" or v.Name == "ValoStyle_Min" or v.Name == "TeleportGunGui" then 
         v:Destroy() 
     end
 end
@@ -36,7 +36,7 @@ TopBar.BackgroundColor3 = Color3.fromRGB(18, 15, 28)
 TopBar.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", TopBar)
-Title.Size = UDim2.new(1, -70, 1, 0)
+Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "⚡ MOBILE GOD-TIER MM2 ULTIMATE PRO ⚡"
@@ -45,6 +45,7 @@ Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 11
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- 닫기 버튼 (창 끄기)
 local CloseBtn = Instance.new("TextButton", TopBar)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -30, 0, 0)
@@ -54,6 +55,36 @@ CloseBtn.TextColor3 = Color3.fromRGB(200, 100, 100)
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 12
 CloseBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+
+-- 최소화(창 끄고 켜기용 'S' 미니 아이콘) 버튼
+local MinBtn = Instance.new("TextButton", TopBar)
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -60, 0, 0)
+MinBtn.BackgroundTransparency = 1
+MinBtn.Text = "—"
+MinBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 12
+
+local MinGui = Instance.new("ScreenGui", CoreGui)
+MinGui.Name = "ValoStyle_Min"
+MinGui.ResetOnSpawn = false
+MinGui.DisplayOrder = 999999
+
+local MinIcon = Instance.new("TextButton", MinGui)
+MinIcon.Size = UDim2.new(0, 42, 0, 42)
+MinIcon.Position = UDim2.new(0, 15, 0, 15)
+MinIcon.BackgroundColor3 = Color3.fromRGB(18, 15, 28)
+MinIcon.Text = "S"
+MinIcon.TextColor3 = Color3.fromRGB(160, 100, 255)
+MinIcon.Font = Enum.Font.GothamBlack
+MinIcon.TextSize = 18
+MinIcon.Visible = false
+Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", MinIcon).Color = Color3.fromRGB(138, 43, 226)
+
+MinBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; MinIcon.Visible = true end)
+MinIcon.MouseButton1Click:Connect(function() MainFrame.Visible = true; MinIcon.Visible = false end)
 
 local Sidebar = Instance.new("Frame", MainFrame)
 Sidebar.Size = UDim2.new(0, 40, 1, -30)
@@ -174,6 +205,58 @@ local function AddToggle(parent, text, callback)
     end)
 end
 
+local function AddSlider(parent, text, min, max, default, callback)
+    local val = default
+    local frame = Instance.new("Frame", parent)
+    frame.Size = UDim2.new(1, 0, 0, 36)
+    frame.BackgroundTransparency = 1
+
+    local lbl = Instance.new("TextLabel", frame)
+    lbl.Size = UDim2.new(1, 0, 0, 16)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = " " .. text .. " [" .. tostring(val) .. "]"
+    lbl.TextColor3 = Color3.fromRGB(190, 185, 205)
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 11
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local bar = Instance.new("Frame", frame)
+    bar.Size = UDim2.new(0.9, 0, 0, 4)
+    bar.Position = UDim2.new(0.05, 0, 0, 24)
+    bar.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+
+    local fill = Instance.new("Frame", bar)
+    fill.Size = UDim2.new((val - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame", fill)
+    knob.Size = UDim2.new(0, 10, 0, 10)
+    knob.Position = UDim2.new(1, -5, 0.5, -5)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local dragging = false
+    local function update(input)
+        local pos = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+        val = math.floor(min + (pos * (max - min)))
+        fill.Size = UDim2.new(pos, 0, 1, 0)
+        lbl.Text = " " .. text .. " [" .. tostring(val) .. "]"
+        if callback then callback(val) end
+    end
+
+    knob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then update(input) end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    end)
+end
+
 local function GetPlayerRole(player)
     if not player or not player.Character then return "Innocent", Color3.fromRGB(50, 255, 100) end
     for _, item in ipairs(player.Character:GetChildren()) do
@@ -183,7 +266,7 @@ local function GetPlayerRole(player)
     if player:FindFirstChild("Backpack") then
         for _, item in ipairs(player.Backpack:GetChildren()) do
             if item:IsA("Tool") and (item.Name:lower():find("knife") or item:FindFirstChild("KnifeServer")) then return "Murderer", Color3.fromRGB(255, 50, 50) end
-            if item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("GunServer")) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
+            if item:IsA("Tool") and (item.Name:lower():find("gun") or item:FindFirstChild("GunServer")) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
         end
     end
     return "Innocent", Color3.fromRGB(50, 255, 100)
@@ -197,7 +280,7 @@ local Config = {
     RainbowBullet = false, BulletColor = "Normal", Speed = false, Jump = false, Noclip = false, KillAllTP = false
 }
 
--- FOV 원 (정중앙 고정)
+-- FOV 원
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
 fovCircle.Thickness = 1.5
@@ -321,7 +404,49 @@ task.spawn(function()
     end
 end)
 
--- 보라색 총 ESP 및 텔포 줍기
+-- 📌 화면 위에 네모나게 뜨는 '총 텔포 버튼' 생성 (드랍된 총이 없을 시 텔포 불가 기능 포함)
+local tpButtonGui = Instance.new("ScreenGui", CoreGui)
+tpButtonGui.Name = "TeleportGunGui"
+tpButtonGui.ResetOnSpawn = false
+
+local tpBtn = Instance.new("TextButton", tpButtonGui)
+tpBtn.Size = UDim2.new(0, 130, 0, 45)
+tpBtn.Position = UDim2.new(0, 20, 0.7, 0) -- 화면 왼쪽에 배치
+tpBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+tpBtn.Text = "🔫 총 텔포하기"
+tpBtn.TextColor3 = Color3.fromRGB(180, 0, 255)
+tpBtn.Font = Enum.Font.GothamBold
+tpBtn.TextSize = 13
+Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 8)
+Instance.new("UIStroke", tpBtn).Color = Color3.fromRGB(138, 43, 226)
+
+local function FindDroppedGun()
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if (v:IsA("Model") or v:IsA("BasePart")) and (v.Name:lower():find("gun") or v.Name:lower():find("revolver") or v.Name == "GunDrop") then
+            local part = v:IsA("BasePart") and v or v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")
+            if part then return part end
+        end
+    end
+    return nil
+end
+
+tpBtn.MouseButton1Click:Connect(function()
+    local gunPart = FindDroppedGun()
+    if gunPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        local origPos = hrp.CFrame
+        hrp.CFrame = gunPart.CFrame + Vector3.new(0, 2, 0)
+        task.wait(0.1)
+        hrp.CFrame = origPos
+    else
+        -- 드랍된 총이 없을 때 알림 텍스트 효과
+        tpBtn.Text = "❌ 총 없음!"
+        task.wait(1)
+        tpBtn.Text = "🔫 총 텔포하기"
+    end
+end)
+
+-- 보라색 총 ESP 및 자동 텔포 줍기 옵션 처리
 local gunEspFolder = Instance.new("Folder", screenGui)
 gunEspFolder.Name = "GunEspFolder"
 local isTeleportingGun = false
@@ -424,7 +549,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 이동 기능 (스피드, 점프, 녹클립, 킬올)
+-- 이동 기능
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
@@ -448,17 +573,21 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- 탭 구성
+-- 탭 구성 (조절 슬라이더 및 기능들)
 local left1, right1 = CreateTab("🎯")
 AddHeader(left1, "Combat & Aim")
 AddToggle(left1, "🔴 Aim Lock On Murderer", function(v) Config.MurderAim = v end)
 AddToggle(left1, "🧲 Curve Bullets (총알 유도)", function(v) Config.CurveBullets = v end)
 AddToggle(left1, "🎯 Prediction (예측샷)", function(v) Config.PredictionEnabled = v end)
+AddSlider(left1, "   ↳ 예측 강도", 0, 100, 15, function(val) Config.Prediction = val / 100 end)
+
 AddHeader(left1, "TriggerBot")
 AddToggle(left1, "🔫 TriggerBot (자동 발사)", function(v) Config.TriggerBot = v end)
+AddSlider(left1, "   ↳ Trigger 범위", 5, 100, 50, function(val) Config.TriggerBotFOV = val end)
+
 AddHeader(right1, "Misc Tools")
 AddToggle(right1, "🧱 Wallbang (벽뚫샷)", function(v) Config.Wallbang = v end)
-AddToggle(right1, "⚡ Auto Teleport Gun (총 텔포 줍기)", function(v) Config.AutoTeleportGun = v end)
+AddToggle(right1, "⚡ Auto Teleport Gun (자동 총 줍기)", function(v) Config.AutoTeleportGun = v end)
 
 local left2, right2 = CreateTab("👁")
 AddHeader(left2, "Visuals & ESP")
@@ -466,8 +595,10 @@ AddToggle(left2, "ESP Box", function(v) Config.ESP_Box = v end)
 AddToggle(left2, "ESP Name", function(v) Config.ESP_Name = v end)
 AddToggle(left2, "💀 R6 Detailed Skeleton", function(v) Config.ESP_Skeleton = v end)
 AddToggle(left2, "🟣 ESP Dropped Gun", function(v) Config.ESP_GunDrop = v end)
+
 AddHeader(right2, "FOV & Crosshair")
 AddToggle(right2, "⭕ Draw FOV Circle", function(v) Config.DrawFOV = v end)
+AddSlider(right2, "   ↳ FOV 크기", 1, 300, 120, function(val) Config.FOVSize = val end)
 AddToggle(right2, "➕ Draw Crosshair (조준점)", function(v) Config.Crosshair = v end)
 AddToggle(right2, "🌀 Spin Crosshair (스핀 조준점)", function(v) Config.SpinCrosshair = v end)
 
