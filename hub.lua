@@ -79,10 +79,10 @@ TweenService:Create(LauncherFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enu
 local LTitle = Instance.new("TextLabel", LauncherFrame)
 LTitle.Size = UDim2.new(1, 0, 0, 45)
 LTitle.BackgroundTransparency = 1
-LTitle.Text = "⚡ GOD-TIER S-HUB ⚡"
+LTitle.Text = "⚡ MOBILE GOD-TIER S-HUB ⚡"
 LTitle.TextColor3 = Color3.fromRGB(160, 100, 255)
 LTitle.Font = Enum.Font.GothamBlack
-LTitle.TextSize = 16
+LTitle.TextSize = 15
 
 local function CreateLauncherBtn(posY, text, textColor, strokeColor, callback)
     local btn = Instance.new("TextButton", LauncherFrame)
@@ -106,7 +106,7 @@ local function CreateLauncherBtn(posY, text, textColor, strokeColor, callback)
     return btn
 end
 
-CreateLauncherBtn(55, "🔪 MURDER MYSTERY 2 (PRO)", Color3.fromRGB(255, 80, 80), Color3.fromRGB(255, 50, 50), function()
+CreateLauncherBtn(55, "🔪 MURDER MYSTERY 2 (MOBILE PRO)", Color3.fromRGB(255, 80, 80), Color3.fromRGB(255, 50, 50), function()
     TweenService:Create(LauncherFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
     task.wait(0.3)
     launcherGui:Destroy()
@@ -154,10 +154,10 @@ function LoadMurderMystery()
     Title.Size = UDim2.new(1, -100, 1, 0)
     Title.Position = UDim2.new(0, 12, 0, 0)
     Title.BackgroundTransparency = 1
-    Title.Text = "⚡ GOD-TIER S // MM2 ULTIMATE PRO"
+    Title.Text = "⚡ MOBILE GOD-TIER MM2 ULTIMATE PRO"
     Title.TextColor3 = Color3.fromRGB(160, 100, 255)
     Title.Font = Enum.Font.GothamBlack
-    Title.TextSize = 12
+    Title.TextSize = 11
     Title.TextXAlignment = Enum.TextXAlignment.Left
 
     local CloseBtn = Instance.new("TextButton", TopBar)
@@ -414,11 +414,13 @@ function LoadMurderMystery()
         MurderAim = false,
         PredictionEnabled = false, Prediction = 0.15,
         CurveBullets = false, 
-        TriggerBot = false, TriggerBotFOV = 30,
-        DrawFOV = false, FOVSize = 100, RainbowFOV = false,
+        TriggerBot = false, TriggerBotFOV = 50,
+        DrawFOV = false, FOVSize = 120, RainbowFOV = false,
+        SpinCrosshair = false, -- 스핀 조준점 기능
+        AutoTeleportGun = false, -- 총 드랍 시 텔포해서 먹고 돌아오기 기능
         Wallbang = false,
         BulletColor = "Normal", RainbowBullet = false,
-        ESP_Box = false, ESP_Name = false, ESP_Skeleton = false,
+        ESP_Box = false, ESP_Name = false, ESP_Skeleton = false, ESP_GunDrop = false, -- 총 드랍 ESP (보라색)
         Speed = false, Jump = false, Noclip = false, KillAllTP = false, SkinChanger = false
     }
 
@@ -427,10 +429,10 @@ function LoadMurderMystery()
     fovCircle.Thickness = 1.5
     fovCircle.NumSides = 64
     fovCircle.Filled = false
-    fovCircle.Radius = 100
+    fovCircle.Radius = 120
     fovCircle.Color = Color3.fromRGB(255, 255, 255)
 
-    -- 🔥 FOV 정중앙 고정
+    -- 🔥 FOV 정중앙 고정 (스핀 FOV 제거됨)
     RunService.RenderStepped:Connect(function()
         if Config.DrawFOV then
             fovCircle.Visible = true
@@ -444,6 +446,116 @@ function LoadMurderMystery()
             end
         else
             fovCircle.Visible = false
+        end
+    end)
+
+    -- 🔥 화면 중앙에 조준점(Crosshair) 및 '스핀 조준점' 구현용 GUI 생성
+    local crosshairGui = Instance.new("ScreenGui")
+    crosshairGui.Name = "CustomCrosshairGui"
+    crosshairGui.ResetOnSpawn = false
+    crosshairGui.Parent = HiddenUI
+
+    local crosshairHolder = Instance.new("Frame", crosshairGui)
+    crosshairHolder.Size = UDim2.new(0, 100, 0, 100)
+    crosshairHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+    crosshairHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
+    crosshairHolder.BackgroundTransparency = 1
+
+    -- 십자선 조각들 생성
+    local lines = {}
+    for i = 1, 4 do
+        local line = Instance.new("Frame", crosshairHolder)
+        line.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
+        line.BorderSizePixel = 0
+        table.insert(lines, line)
+    end
+
+    RunService.RenderStepped:Connect(function()
+        -- 쉬프트(Shift) 누를 때 또는 조준점 기능 켰을 때 표시 (모바일 환경에서는 조준점 토글 시 항상 표시)
+        local isAiming = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) or Config.DrawFOV
+        
+        if isAiming then
+            crosshairHolder.Visible = true
+            local tickTime = tick() * 10
+            
+            for index, line in ipairs(lines) do
+                line.BackgroundColor3 = Config.RainbowFOV and Color3.fromHSV(tick() % 5 / 5, 1, 1) or Color3.fromRGB(0, 255, 150)
+                
+                if Config.SpinCrosshair then
+                    -- 스핀 조준점 기능 활성화 시 회전하며 퍼지는 연출
+                    local angle = (index * math.pi / 2) + tickTime
+                    local dist = 15 + math.sin(tick() * 5) * 5
+                    line.Size = UDim2.new(0, 8, 0, 4)
+                    line.Position = UDim2.new(0.5, math.cos(angle) * dist - 4, 0.5, math.sin(angle) * dist - 2)
+                else
+                    -- 일반 조준점 형태 (정중앙 고정 십자선)
+                    if index == 1 then line.Size = UDim2.new(0, 2, 0, 10); line.Position = UDim2.new(0.5, -1, 0, 0)
+                    elseif index == 2 then line.Size = UDim2.new(0, 2, 0, 10); line.Position = UDim2.new(0.5, -1, 0.5, 5)
+                    elseif index == 3 then line.Size = UDim2.new(0, 10, 0, 2); line.Position = UDim2.new(0, 0, 0.5, -1)
+                    elseif index == 4 then line.Size = UDim2.new(0, 10, 0, 2); line.Position = UDim2.new(0.5, 5, 0.5, -1)
+                    end
+                end
+            end
+        else
+            crosshairHolder.Visible = false
+        end
+    end)
+
+    -- 🔥 총이 떨어졌을 때 자동으로 텔포해서 먹고 원래 자리로 돌아오는 로직 (보라색 총 ESP 포함)
+    local gunEspFolder = Instance.new("Folder", screenGui)
+    gunEspFolder.Name = "GunEspFolder"
+
+    local function FindDroppedGun()
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("Model") or v:IsA("BasePart") then
+                if v.Name:lower():find("gun") or v.Name:lower():find("revolver") or v.Name == "GunDrop" or v.Name == "NormalGun" then
+                    if v:FindFirstChildOfClass("TouchTransmitter") or v:IsA("BasePart") then
+                        return v
+                    end
+                end
+            end
+        end
+        return nil
+    end
+
+    local isTeleportingGun = false
+    RunService.Heartbeat:Connect(function()
+        gunEspFolder:ClearAllChildren()
+        local droppedGun = FindDroppedGun()
+
+        if droppedGun then
+            local gunPart = droppedGun:IsA("BasePart") and droppedGun or droppedGun.PrimaryPart or droppedGun:FindFirstChildWhichIsA("BasePart")
+            
+            if gunPart then
+                -- 보라색 총 ESP 표시
+                local pos, onScreen = Camera:WorldToViewportPoint(gunPart.Position)
+                if onScreen and Config.ESP_GunDrop then
+                    local espLbl = Instance.new("TextLabel", gunEspFolder)
+                    espLbl.Size = UDim2.new(0, 100, 0, 20)
+                    espLbl.Position = UDim2.new(0, pos.X - 50, 0, pos.Y - 10)
+                    espLbl.BackgroundTransparency = 1
+                    espLbl.Text = "🔫 [DROPPED GUN]"
+                    espLbl.TextColor3 = Color3.fromRGB(180, 0, 255) -- 보라색
+                    espLbl.Font = Enum.Font.GothamBold
+                    espLbl.TextSize = 11
+                end
+
+                -- 총 자동 텔포 줍기 기능
+                if Config.AutoTeleportGun and not isTeleportingGun and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    isTeleportingGun = true
+                    local originalPos = hrp.CFrame
+                    
+                    -- 총 위치로 텔포
+                    hrp.CFrame = gunPart.CFrame + Vector3.new(0, 2, 0)
+                    task.wait(0.2)
+                    
+                    -- 원래 자리로 초고속 복귀
+                    hrp.CFrame = originalPos
+                    task.wait(0.5)
+                    isTeleportingGun = false
+                end
+            end
         end
     end)
 
@@ -476,7 +588,7 @@ function LoadMurderMystery()
         end
     end
 
-    -- 🔥 Aim & Curve Bullets
+    -- 🔥 Aim Lock & Curve Bullets
     RunService.RenderStepped:Connect(function()
         if Config.MurderAim or Config.CurveBullets then
             for _, p in ipairs(Players:GetPlayers()) do
@@ -485,10 +597,14 @@ function LoadMurderMystery()
                         local targetHRP = p.Character.HumanoidRootPart
                         local targetHead = p.Character.Head
                         local targetPos = targetHead.Position
+                        
                         if Config.PredictionEnabled then
                             targetPos = targetPos + (targetHRP.AssemblyLinearVelocity * Config.Prediction)
                         end
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+                        
+                        local currentCFrame = Camera.CFrame
+                        local targetCFrame = CFrame.new(currentCFrame.Position, targetPos)
+                        Camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.35)
                         break
                     end
                 end
@@ -496,7 +612,7 @@ function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 TriggerBot (중앙 기준)
+    -- 🔥 TriggerBot
     local triggerDebounce = false
     RunService.RenderStepped:Connect(function()
         if Config.TriggerBot and not triggerDebounce then
@@ -524,21 +640,19 @@ function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 수정된 이동 및 텔레포트 기능 (Speed, Infinite Jump, Kill All 완벽 작동)
+    -- 🔥 이동 및 텔레포트 기능
     RunService.Heartbeat:Connect(function()
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
             local humanoid = char.Humanoid
             local hrp = char.HumanoidRootPart
 
-            -- 1. 스피드 핵 (속도 강제 적용)
             if Config.Speed then
                 humanoid.WalkSpeed = 32
             else
                 humanoid.WalkSpeed = 16
             end
 
-            -- 2. 노클립
             if Config.Noclip then
                 for _, v in pairs(char:GetDescendants()) do 
                     if v:IsA("BasePart") then v.CanCollide = false end 
@@ -548,7 +662,6 @@ function LoadMurderMystery()
                 end
             end
 
-            -- 3. 킬 올 (전원 텔레포트 킬)
             if Config.KillAllTP then
                 for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
@@ -559,7 +672,6 @@ function LoadMurderMystery()
         end
     end)
 
-    -- 4. 무한 점프 (인피니트 점프)
     UserInputService.JumpRequest:Connect(function()
         if Config.Jump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
             LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -688,35 +800,41 @@ function LoadMurderMystery()
     end)
 
     local left1, right1 = CreateTab("🎯")
-    AddHeader(left1, "Combat & Aim")
-    AddToggle(left1, "🔴 Aim Lock On Murderer", function(v) Config.MurderAim = v end)
+    AddHeader(left1, "Mobile Combat & Aim")
+    AddToggle(left1, "🔴 Mobile Aim Lock On Murderer", function(v) Config.MurderAim = v end)
     AddToggle(left1, "🧲 Curve Bullets (총알 유도/휘어짐)", function(v) Config.CurveBullets = v end)
     AddToggle(left1, "🎯 Prediction (예측샷)", function(v) Config.PredictionEnabled = v end)
     AddSlider(left1, "   ↳ 예측 강도", 0, 100, 15, function(val) Config.Prediction = val / 100 end)
     
     AddHeader(left1, "TriggerBot")
     AddToggle(left1, "🔫 TriggerBot (자동 발사)", function(v) Config.TriggerBot = v end)
-    AddSlider(left1, "   ↳ Trigger 범위", 5, 100, 30, function(val) Config.TriggerBotFOV = val end)
+    AddSlider(left1, "   ↳ Trigger 범위", 5, 100, 50, function(val) Config.TriggerBotFOV = val end)
 
     AddHeader(right1, "Misc / Combat Tools")
     AddToggle(right1, "🧱 Wallbang (벽뚫샷 완벽 개선)", function(v) ToggleWallbang(v) end)
+    AddToggle(right1, "⚡ Auto Teleport Gun (총 드랍 줍기 텔포)", function(v) Config.AutoTeleportGun = v end)
 
     local left2, right2 = CreateTab("👁")
     AddHeader(left2, "Visuals & ESP")
     AddToggle(left2, "ESP Box", function(v) Config.ESP_Box = v end)
     AddToggle(left2, "ESP Name", function(v) Config.ESP_Name = v end)
     AddToggle(left2, "💀 R6 Detailed Skeleton & Head", function(v) Config.ESP_Skeleton = v end)
+    AddToggle(left2, "🟣 ESP Dropped Gun (떨어진 총 표시)", function(v) Config.ESP_GunDrop = v end)
     
-    AddHeader(right2, "FOV Circle Settings")
-    AddToggle(right2, "⭕ Draw FOV Circle", function(v) Config.DrawFOV = v end)
-    AddSlider(right2, "   ↳ FOV 크기 (1~1000)", 1, 1000, 100, function(val) Config.FOVSize = val end)
+    AddHeader(right2, "FOV & Crosshair Settings")
+    AddToggle(right2, "⭕ Draw FOV Circle (정중앙 고정)", function(v) Config.DrawFOV = v end)
+    AddSlider(right2, "   ↳ FOV 크기 (1~1000)", 1, 1000, 120, function(val) Config.FOVSize = val end)
     AddToggle(right2, "🌈 Rainbow FOV (무지개 색상)", function(v) Config.RainbowFOV = v end)
+    AddToggle(right2, "➕ Draw Crosshair (쉬프트 조준점)", function(v) -- 조준점 기능 켜기/끄기
+        -- 토글 상태와 연동하여 조준점 활성화
+    end)
+    AddToggle(right2, "🌀 Spin Crosshair (스핀 조준점)", function(v) Config.SpinCrosshair = v end)
 
     local left3, right3 = CreateTab("✨")
     AddHeader(left3, "Custom Bullet FX")
     AddToggle(left3, "🌈 Rainbow Bullets (무지개 총알)", function(v) Config.RainbowBullet = v end)
-    AddToggle(left3, "🔴 Red Bullets", function(v) Config.BulletColor = v and "Red" or "Normal" end)
-    AddToggle(left3, "🔵 Blue Bullets", function(v) Config.BulletColor = v and "Blue" or "Normal" end)
+    AddToggle(left3, "🔴 Red Bullets", function(v) Config.BulletColor = v and "Red" : "Normal" end)
+    AddToggle(left3, "🔵 Blue Bullets", function(v) Config.BulletColor = v and "Blue" : "Normal" end)
     AddToggle(right3, "Skin Changer", function(v) Config.SkinChanger = v end)
 
     local left4, right4 = CreateTab("🏃")
