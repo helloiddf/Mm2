@@ -6,6 +6,7 @@ local TextChatService = game:GetService("TextChatService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -17,7 +18,7 @@ end
 if CoreGui:FindFirstChild("ValoStyle_Hub") then CoreGui.ValoStyle_Hub:Destroy() end
 
 --------------------------------------------------------------------
--- 🚀 1. 최초 실행 런처 UI
+-- 🚀 1. 최초 실행 런처 UI (검/빨 애니메이션 그라데이션)
 --------------------------------------------------------------------
 local launcherGui = Instance.new("ScreenGui")
 launcherGui.Name = "Launcher_Hub"
@@ -30,62 +31,78 @@ local LauncherFrame = Instance.new("Frame", launcherGui)
 LauncherFrame.Size = UDim2.new(0, 300, 0, 180)
 LauncherFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 LauncherFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-LauncherFrame.BackgroundColor3 = Color3.fromRGB(13, 11, 20)
+LauncherFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 LauncherFrame.BorderSizePixel = 0
 Instance.new("UICorner", LauncherFrame).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", LauncherFrame).Color = Color3.fromRGB(138, 43, 226)
+local lStroke = Instance.new("UIStroke", LauncherFrame)
+lStroke.Color = Color3.fromRGB(255, 0, 0)
+lStroke.Thickness = 2
+
+-- 🔥 UI 검/빨 애니메이션 그라데이션
+local lGradient = Instance.new("UIGradient", LauncherFrame)
+lGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 0, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(180, 0, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 0, 0))
+}
+lGradient.Rotation = 45
+
+RunService.RenderStepped:Connect(function()
+    if lGradient then
+        lGradient.Offset = Vector2.new(math.sin(tick() * 1.5) * 0.5, 0)
+    end
+end)
 
 local LTitle = Instance.new("TextLabel", LauncherFrame)
 LTitle.Size = UDim2.new(1, 0, 0, 40)
 LTitle.BackgroundTransparency = 1
 LTitle.Text = "SELECT YOUR CHEAT"
-LTitle.TextColor3 = Color3.fromRGB(160, 100, 255)
+LTitle.TextColor3 = Color3.fromRGB(255, 200, 200)
 LTitle.Font = Enum.Font.GothamBlack
 LTitle.TextSize = 16
 
 local BtnMurder = Instance.new("TextButton", LauncherFrame)
 BtnMurder.Size = UDim2.new(0.8, 0, 0, 45)
 BtnMurder.Position = UDim2.new(0.1, 0, 0, 55)
-BtnMurder.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+BtnMurder.BackgroundColor3 = Color3.fromRGB(15, 0, 0)
 BtnMurder.Text = "🔪 MURDER MYSTERY 2"
-BtnMurder.TextColor3 = Color3.fromRGB(255, 80, 80)
+BtnMurder.TextColor3 = Color3.fromRGB(255, 50, 50)
 BtnMurder.Font = Enum.Font.GothamBold
 BtnMurder.TextSize = 14
 Instance.new("UICorner", BtnMurder).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", BtnMurder).Color = Color3.fromRGB(255, 50, 50)
+Instance.new("UIStroke", BtnMurder).Color = Color3.fromRGB(200, 0, 0)
 
 local BtnWord = Instance.new("TextButton", LauncherFrame)
 BtnWord.Size = UDim2.new(0.8, 0, 0, 45)
 BtnWord.Position = UDim2.new(0.1, 0, 0, 115)
-BtnWord.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+BtnWord.BackgroundColor3 = Color3.fromRGB(15, 0, 0)
 BtnWord.Text = "💬 AUTO WORD CHAIN"
-BtnWord.TextColor3 = Color3.fromRGB(80, 255, 150)
+BtnWord.TextColor3 = Color3.fromRGB(255, 100, 100)
 BtnWord.Font = Enum.Font.GothamBold
 BtnWord.TextSize = 14
 Instance.new("UICorner", BtnWord).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", BtnWord).Color = Color3.fromRGB(50, 255, 100)
+Instance.new("UIStroke", BtnWord).Color = Color3.fromRGB(200, 0, 0)
 
 local LClose = Instance.new("TextButton", LauncherFrame)
 LClose.Size = UDim2.new(0, 30, 0, 30)
 LClose.Position = UDim2.new(1, -30, 0, 0)
 LClose.BackgroundTransparency = 1
 LClose.Text = "✕"
-LClose.TextColor3 = Color3.fromRGB(200, 100, 100)
+LClose.TextColor3 = Color3.fromRGB(255, 255, 255)
 LClose.Font = Enum.Font.GothamBold
 LClose.TextSize = 12
 LClose.MouseButton1Click:Connect(function() launcherGui:Destroy() end)
 
 --------------------------------------------------------------------
--- 💬 2. 끝말잇기 (Word Chain) 생략 (동일 유지)
+-- 💬 2. 끝말잇기 (Word Chain) 생략
 --------------------------------------------------------------------
 local function LoadWordChain()
-    -- (끝말잇기 기능은 이전 스크립트와 100% 동일하게 유지됩니다.)
-    -- 메모리 효율을 위해 답변 길이상 생략, 필요시 이전 답변의 LoadWordChain() 사용
     playerGui:FindFirstChild("Launcher_Hub"):Destroy()
+    -- (끝말잇기는 기존 코드 동일 유지. 길이상 생략)
 end
 
 --------------------------------------------------------------------
--- 🔪 3. 머더 미스터리 2 (MM2) 종결급 수정 로직
+-- 🔪 3. 머더 미스터리 2 (MM2) 원콤 종결급 스크립트
 --------------------------------------------------------------------
 local function LoadMurderMystery()
     local screenGui = Instance.new("ScreenGui")
@@ -96,48 +113,67 @@ local function LoadMurderMystery()
     screenGui.Parent = playerGui
 
     local MainFrame = Instance.new("Frame", screenGui)
-    MainFrame.Size = UDim2.new(0, 500, 0, 320)
+    MainFrame.Size = UDim2.new(0, 520, 0, 340)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(13, 11, 20)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
-    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
-    Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(45, 35, 70)
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+    
+    local mStroke = Instance.new("UIStroke", MainFrame)
+    mStroke.Color = Color3.fromRGB(255, 0, 0)
+    mStroke.Thickness = 2.5
+
+    -- 🔥 메인 허브 검/빨 애니메이션 그라데이션
+    local mGradient = Instance.new("UIGradient", MainFrame)
+    mGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 0, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 0, 0))
+    }
+    mGradient.Rotation = -45
+
+    RunService.RenderStepped:Connect(function()
+        if mGradient then
+            mGradient.Offset = Vector2.new(0, math.sin(tick() * 1.2) * 0.4)
+        end
+    end)
 
     local TopBar = Instance.new("Frame", MainFrame)
-    TopBar.Size = UDim2.new(1, 0, 0, 25)
-    TopBar.BackgroundColor3 = Color3.fromRGB(18, 15, 28)
+    TopBar.Size = UDim2.new(1, 0, 0, 30)
+    TopBar.BackgroundColor3 = Color3.fromRGB(10, 0, 0)
+    TopBar.BackgroundTransparency = 0.5
     TopBar.BorderSizePixel = 0
 
     local Title = Instance.new("TextLabel", TopBar)
     Title.Size = UDim2.new(1, -100, 1, 0)
-    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Position = UDim2.new(0, 12, 0, 0)
     Title.BackgroundTransparency = 1
-    Title.Text = "S // MURDER MYSTERY PRO (GOD-TIER AIM)"
-    Title.TextColor3 = Color3.fromRGB(160, 100, 255)
+    Title.Text = "BLOOD // MURDER MYSTERY PRO"
+    Title.TextColor3 = Color3.fromRGB(255, 100, 100)
     Title.Font = Enum.Font.GothamBlack
-    Title.TextSize = 12
+    Title.TextSize = 13
     Title.TextXAlignment = Enum.TextXAlignment.Left
 
     local CloseBtn = Instance.new("TextButton", TopBar)
-    CloseBtn.Size = UDim2.new(0, 30, 0, 25)
-    CloseBtn.Position = UDim2.new(1, -30, 0, 0)
+    CloseBtn.Size = UDim2.new(0, 30, 1, 0)
+    CloseBtn.Position = UDim2.new(1, -35, 0, 0)
     CloseBtn.BackgroundTransparency = 1
     CloseBtn.Text = "✕"
-    CloseBtn.TextColor3 = Color3.fromRGB(200, 100, 100)
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
     CloseBtn.Font = Enum.Font.GothamBold
-    CloseBtn.TextSize = 12
+    CloseBtn.TextSize = 14
     CloseBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
     local MinBtn = Instance.new("TextButton", TopBar)
-    MinBtn.Size = UDim2.new(0, 30, 0, 25)
-    MinBtn.Position = UDim2.new(1, -60, 0, 0)
+    MinBtn.Size = UDim2.new(0, 30, 1, 0)
+    MinBtn.Position = UDim2.new(1, -65, 0, 0)
     MinBtn.BackgroundTransparency = 1
     MinBtn.Text = "—"
-    MinBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    MinBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     MinBtn.Font = Enum.Font.GothamBold
-    MinBtn.TextSize = 12
+    MinBtn.TextSize = 14
 
     local MinGui = Instance.new("ScreenGui")
     MinGui.Name = "ValoStyle_Min"
@@ -146,16 +182,16 @@ local function LoadMurderMystery()
     MinGui.Parent = playerGui
 
     local MinIcon = Instance.new("TextButton", MinGui)
-    MinIcon.Size = UDim2.new(0, 38, 0, 38)
-    MinIcon.Position = UDim2.new(0, 15, 0, 15)
-    MinIcon.BackgroundColor3 = Color3.fromRGB(18, 15, 28)
-    MinIcon.Text = "S"
-    MinIcon.TextColor3 = Color3.fromRGB(160, 100, 255)
+    MinIcon.Size = UDim2.new(0, 45, 0, 45)
+    MinIcon.Position = UDim2.new(0, 20, 0, 20)
+    MinIcon.BackgroundColor3 = Color3.fromRGB(15, 0, 0)
+    MinIcon.Text = "B"
+    MinIcon.TextColor3 = Color3.fromRGB(255, 50, 50)
     MinIcon.Font = Enum.Font.GothamBlack
-    MinIcon.TextSize = 16
+    MinIcon.TextSize = 20
     MinIcon.Visible = false
     Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(0, 8)
-    Instance.new("UIStroke", MinIcon).Color = Color3.fromRGB(138, 43, 226)
+    Instance.new("UIStroke", MinIcon).Color = Color3.fromRGB(255, 0, 0)
 
     MinBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; MinIcon.Visible = true end)
     MinIcon.MouseButton1Click:Connect(function() MainFrame.Visible = true; MinIcon.Visible = false end)
@@ -177,19 +213,20 @@ local function LoadMurderMystery()
     end)
 
     local Sidebar = Instance.new("Frame", MainFrame)
-    Sidebar.Size = UDim2.new(0, 36, 1, -25)
-    Sidebar.Position = UDim2.new(0, 0, 0, 25)
-    Sidebar.BackgroundColor3 = Color3.fromRGB(16, 13, 25)
+    Sidebar.Size = UDim2.new(0, 40, 1, -30)
+    Sidebar.Position = UDim2.new(0, 0, 0, 30)
+    Sidebar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Sidebar.BackgroundTransparency = 0.6
     Sidebar.BorderSizePixel = 0
     local SidebarLayout = Instance.new("UIListLayout", Sidebar)
     SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    SidebarLayout.Padding = UDim.new(0, 5)
-    Instance.new("UIPadding", Sidebar).PaddingTop = UDim.new(0, 8)
+    SidebarLayout.Padding = UDim.new(0, 8)
+    Instance.new("UIPadding", Sidebar).PaddingTop = UDim.new(0, 12)
 
     local ContentArea = Instance.new("Frame", MainFrame)
-    ContentArea.Size = UDim2.new(1, -36, 1, -25)
-    ContentArea.Position = UDim2.new(0, 36, 0, 25)
-    ContentArea.BackgroundColor3 = Color3.fromRGB(13, 11, 20)
+    ContentArea.Size = UDim2.new(1, -40, 1, -30)
+    ContentArea.Position = UDim2.new(0, 40, 0, 30)
+    ContentArea.BackgroundTransparency = 1
     ContentArea.BorderSizePixel = 0
 
     local Tabs = {}
@@ -197,16 +234,16 @@ local function LoadMurderMystery()
 
     local function CreateTab(iconText)
         local TabBtn = Instance.new("TextButton", Sidebar)
-        TabBtn.Size = UDim2.new(0, 28, 0, 28)
+        TabBtn.Size = UDim2.new(0, 32, 0, 32)
         TabBtn.BackgroundTransparency = 1
         TabBtn.Text = iconText
-        TabBtn.TextColor3 = Color3.fromRGB(100, 95, 120)
+        TabBtn.TextColor3 = Color3.fromRGB(150, 100, 100)
         TabBtn.Font = Enum.Font.GothamBold
-        TabBtn.TextSize = 13
+        TabBtn.TextSize = 16
 
         local Indicator = Instance.new("Frame", TabBtn)
-        Indicator.Size = UDim2.new(0, 2, 1, 0)
-        Indicator.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+        Indicator.Size = UDim2.new(0, 3, 1, 0)
+        Indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
         Indicator.Visible = false
 
         local TabContainer = Instance.new("Frame", ContentArea)
@@ -215,28 +252,28 @@ local function LoadMurderMystery()
         TabContainer.Visible = false
 
         local LeftCol = Instance.new("ScrollingFrame", TabContainer)
-        LeftCol.Size = UDim2.new(0.5, -8, 1, -10)
-        LeftCol.Position = UDim2.new(0, 8, 0, 5)
+        LeftCol.Size = UDim2.new(0.5, -10, 1, -15)
+        LeftCol.Position = UDim2.new(0, 10, 0, 10)
         LeftCol.BackgroundTransparency = 1
         LeftCol.ScrollBarThickness = 2
         local lLayout = Instance.new("UIListLayout", LeftCol)
-        lLayout.Padding = UDim.new(0, 6)
+        lLayout.Padding = UDim.new(0, 8)
 
         local RightCol = Instance.new("ScrollingFrame", TabContainer)
-        RightCol.Size = UDim2.new(0.5, -8, 1, -10)
-        RightCol.Position = UDim2.new(0.5, 4, 0, 5)
+        RightCol.Size = UDim2.new(0.5, -10, 1, -15)
+        RightCol.Position = UDim2.new(0.5, 5, 0, 10)
         RightCol.BackgroundTransparency = 1
         RightCol.ScrollBarThickness = 2
         local rLayout = Instance.new("UIListLayout", RightCol)
-        rLayout.Padding = UDim.new(0, 6)
+        rLayout.Padding = UDim.new(0, 8)
 
         TabBtn.MouseButton1Click:Connect(function()
             if currentTab then
-                currentTab.Btn.TextColor3 = Color3.fromRGB(100, 95, 120)
+                currentTab.Btn.TextColor3 = Color3.fromRGB(150, 100, 100)
                 currentTab.Ind.Visible = false
                 currentTab.Container.Visible = false
             end
-            TabBtn.TextColor3 = Color3.fromRGB(160, 100, 255)
+            TabBtn.TextColor3 = Color3.fromRGB(255, 200, 200)
             Indicator.Visible = true
             TabContainer.Visible = true
             currentTab = {Btn = TabBtn, Ind = Indicator, Container = TabContainer}
@@ -248,19 +285,19 @@ local function LoadMurderMystery()
 
     local function AddHeader(parent, text)
         local lbl = Instance.new("TextLabel", parent)
-        lbl.Size = UDim2.new(1, 0, 0, 22)
+        lbl.Size = UDim2.new(1, 0, 0, 24)
         lbl.BackgroundTransparency = 1
         lbl.Text = text
-        lbl.TextColor3 = Color3.fromRGB(160, 100, 255)
-        lbl.Font = Enum.Font.GothamBold
-        lbl.TextSize = 11
+        lbl.TextColor3 = Color3.fromRGB(255, 120, 120)
+        lbl.Font = Enum.Font.GothamBlack
+        lbl.TextSize = 12
         lbl.TextXAlignment = Enum.TextXAlignment.Left
     end
 
     local function AddToggle(parent, text, callback)
         local state = false
         local btn = Instance.new("TextButton", parent)
-        btn.Size = UDim2.new(1, 0, 0, 26)
+        btn.Size = UDim2.new(1, 0, 0, 28)
         btn.BackgroundTransparency = 1
         btn.Text = ""
 
@@ -268,28 +305,29 @@ local function LoadMurderMystery()
         lbl.Size = UDim2.new(0.75, 0, 1, 0)
         lbl.BackgroundTransparency = 1
         lbl.Text = " " .. text
-        lbl.TextColor3 = Color3.fromRGB(190, 185, 205)
-        lbl.Font = Enum.Font.Gotham
+        lbl.TextColor3 = Color3.fromRGB(220, 200, 200)
+        lbl.Font = Enum.Font.GothamBold
         lbl.TextSize = 11
         lbl.TextXAlignment = Enum.TextXAlignment.Left
 
         local switch = Instance.new("Frame", btn)
-        switch.Size = UDim2.new(0, 24, 0, 12)
-        switch.Position = UDim2.new(1, -26, 0.5, -6)
-        switch.BackgroundColor3 = Color3.fromRGB(28, 23, 40)
+        switch.Size = UDim2.new(0, 26, 0, 14)
+        switch.Position = UDim2.new(1, -30, 0.5, -7)
+        switch.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
         Instance.new("UICorner", switch).CornerRadius = UDim.new(1, 0)
+        Instance.new("UIStroke", switch).Color = Color3.fromRGB(100, 0, 0)
         
         local circle = Instance.new("Frame", switch)
-        circle.Size = UDim2.new(0, 8, 0, 8)
-        circle.Position = UDim2.new(0, 2, 0.5, -4)
-        circle.BackgroundColor3 = Color3.fromRGB(100, 95, 120)
+        circle.Size = UDim2.new(0, 10, 0, 10)
+        circle.Position = UDim2.new(0, 2, 0.5, -5)
+        circle.BackgroundColor3 = Color3.fromRGB(150, 100, 100)
         Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
 
         btn.MouseButton1Click:Connect(function()
             state = not state
-            switch.BackgroundColor3 = state and Color3.fromRGB(138, 43, 226) or Color3.fromRGB(28, 23, 40)
-            circle.BackgroundColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 95, 120)
-            circle.Position = state and UDim2.new(1, -10, 0.5, -4) or UDim2.new(0, 2, 0.5, -4)
+            switch.BackgroundColor3 = state and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(30, 10, 10)
+            circle.BackgroundColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 100, 100)
+            circle.Position = state and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)
             if callback then callback(state) end
         end)
     end
@@ -331,52 +369,27 @@ local function LoadMurderMystery()
     end
 
     local Config = {
-        MurderAim = false, AutoKillMurderer = false, KillAllTP = false,
+        SilentAim = false, AutoKillMurderer = false, KillAllTP = false,
         ESP_Box = false, ESP_Name = false, ESP_Skeleton = false, ESP_GunDrop = false,
-        Speed = false, Jump = false, Noclip = false, SkinChanger = false, TPGunButton = false, Wallbang = false
+        Speed = false, Jump = false, Noclip = false, SkinChanger = false, TPGunButton = false
     }
 
-    local wallbangParts = {}
-    local function HandleWallbang(state)
-        Config.Wallbang = state
-        if state then
-            task.spawn(function()
-                while Config.Wallbang do
-                    for _, v in ipairs(workspace:GetDescendants()) do
-                        if v:IsA("BasePart") and v.CanQuery then
-                            local isPlayer = v.Parent and (v.Parent:FindFirstChild("Humanoid") or (v.Parent.Parent and v.Parent.Parent:FindFirstChild("Humanoid")))
-                            local isGun = v.Name == "GunDrop" or v.Name == "NormalGun" or (v.Parent and v.Parent.Name:lower():find("gun"))
-                            if not isPlayer and not isGun and not v:IsDescendantOf(Camera) then
-                                v.CanQuery = false
-                                table.insert(wallbangParts, v)
-                            end
-                        end
-                    end
-                    task.wait(1.5)
-                end
-            end)
-        else
-            for _, v in ipairs(wallbangParts) do if v and v.Parent then v.CanQuery = true end end
-            table.clear(wallbangParts)
-        end
-    end
-
-    -- 📌 드래그 가능한 총 텔포 버튼 UI
+    -- 📌 총 텔포 버튼 (빨간 테마)
     local tpButtonGui = Instance.new("ScreenGui", playerGui)
     tpButtonGui.Name = "TeleportGunGui"
     tpButtonGui.ResetOnSpawn = false
     tpButtonGui.Enabled = false
 
     local tpBtn = Instance.new("TextButton", tpButtonGui)
-    tpBtn.Size = UDim2.new(0, 130, 0, 45)
+    tpBtn.Size = UDim2.new(0, 140, 0, 45)
     tpBtn.Position = UDim2.new(0, 20, 0.7, 0)
-    tpBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+    tpBtn.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
     tpBtn.Text = "🔫 총에 텔포하기"
-    tpBtn.TextColor3 = Color3.fromRGB(180, 0, 255)
+    tpBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
     tpBtn.Font = Enum.Font.GothamBold
     tpBtn.TextSize = 13
     Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 8)
-    Instance.new("UIStroke", tpBtn).Color = Color3.fromRGB(138, 43, 226)
+    Instance.new("UIStroke", tpBtn).Color = Color3.fromRGB(200, 0, 0)
 
     local tpDragging, tpDragInput, tpDragStart, tpStartPos
     tpBtn.InputBegan:Connect(function(input)
@@ -410,7 +423,7 @@ local function LoadMurderMystery()
                     tpBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
                     task.wait(1)
                     tpBtn.Text = "🔫 총에 텔포하기"
-                    tpBtn.TextColor3 = Color3.fromRGB(180, 0, 255)
+                    tpBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
                 end
             end
         end
@@ -421,91 +434,85 @@ local function LoadMurderMystery()
     notifyGui.ResetOnSpawn = false
     
     local notifyLbl = Instance.new("TextLabel", notifyGui)
-    notifyLbl.Size = UDim2.new(0, 320, 0, 40)
-    notifyLbl.Position = UDim2.new(1, -340, 1, -80)
-    notifyLbl.BackgroundColor3 = Color3.fromRGB(30, 20, 40)
+    notifyLbl.Size = UDim2.new(0, 340, 0, 40)
+    notifyLbl.Position = UDim2.new(1, -360, 1, -80)
+    notifyLbl.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
     notifyLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
-    notifyLbl.Text = "🚨 보안관이 운지 뛰었습니다 텔포 하여 총을 먹어주세요."
+    notifyLbl.Text = "🚨 보안관이 운지했습니다! 빨리 총을 획득하세요!"
     notifyLbl.Font = Enum.Font.GothamBold
     notifyLbl.TextSize = 13
     notifyLbl.Visible = false
     Instance.new("UICorner", notifyLbl).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", notifyLbl).Color = Color3.fromRGB(255, 50, 50)
 
-    -- 🔥 [원콤 종결급] 에임락 & 오토킬 완벽 수정 (RenderStepped 통합)
+    local wasGunDropped = false
+
+    -- 🔥 [원콤 종결급] Silent Aim (Magic Bullet) 및 오토 킬
     RunService.RenderStepped:Connect(function()
-        if Config.MurderAim or Config.AutoKillMurderer then
-            local murderer = nil
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-                    if GetPlayerRole(p) == "Murderer" then
-                        murderer = p
-                        break
-                    end
+        local gunPart = FindDroppedGun()
+        
+        -- 총 드랍 시 6초 알림 유지
+        if gunPart and not wasGunDropped then
+            wasGunDropped = true
+            notifyLbl.Visible = true
+            task.delay(6, function() notifyLbl.Visible = false end)
+        elseif not gunPart then
+            wasGunDropped = false
+        end
+
+        local murderer = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
+                if GetPlayerRole(p) == "Murderer" then
+                    murderer = p
+                    break
                 end
             end
+        end
 
-            if murderer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local mHrp = murderer.Character.HumanoidRootPart
-                
-                -- 히트박스를 너무 무식하게(300) 키우면 맵에 껴서 총알이 씹힙니다. 
-                -- 상하 무빙(점프)을 다 잡아먹을 수 있는 최적의 크기(60x60x60)로 세팅
-                mHrp.Size = Vector3.new(60, 60, 60)
-                mHrp.Transparency = 0.8
-                mHrp.CanCollide = false
+        if murderer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local mHrp = murderer.Character.HumanoidRootPart
+            local myChar = LocalPlayer.Character
+            local myGun = myChar:FindFirstChild("Gun") or myChar:FindFirstChild("Revolver")
+            
+            -- 오토 킬 로직: 켜져있으면 보안관이거나 총 먹는 즉시 꺼내고 쏜다
+            if Config.AutoKillMurderer then
+                if not myGun and LocalPlayer:FindFirstChild("Backpack") then
+                    local bpGun = LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Revolver")
+                    if bpGun and myChar:FindFirstChildOfClass("Humanoid") then
+                        myChar.Humanoid:EquipTool(bpGun)
+                        myGun = bpGun
+                    end
+                end
 
-                if Config.MurderAim then
-                    -- 에임이 점프/무빙에도 절대 안 흔들리게 즉각 고정 (위에서 아래로 쏠 때도 완벽)
+                if myGun then
+                    -- 머더 정수리 위 10스터드 위로 텔레포트
+                    myChar.HumanoidRootPart.CFrame = CFrame.new(mHrp.Position + Vector3.new(0, 10, 0), mHrp.Position)
                     Camera.CFrame = CFrame.new(Camera.CFrame.Position, mHrp.Position)
+                    myGun:Activate()
+                    if mouse1click then mouse1click() end
                 end
+            end
 
-                if Config.AutoKillMurderer then
-                    local myGun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Revolver")
-                    if myGun then
-                        -- 오토킬: 머더의 정수리 위(10스터드)로 텔포 후 아래로 꽂아버림 (무빙, 점프 완전 무력화)
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(mHrp.Position + Vector3.new(0, 10, 0), mHrp.Position)
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, mHrp.Position)
-                        myGun:Activate()
-                        if mouse1click then mouse1click() end
-                    end
-                end
+            -- 사일런트 에임 (Magic Bullet): 허공에 쏴도 머더에게 꽂힘
+            if Config.SilentAim and myGun then
+                -- 머더의 히트박스를 내 카메라 바로 앞(5스터드)에 보이지 않게 끌어다 둠
+                -- 화면에 대충 쏘면 바로 눈앞에 있는 머더의 투명 히트박스에 맞게 됨 (벽뚫/미스 확률 0%)
+                mHrp.Size = Vector3.new(6, 6, 6)
+                mHrp.Transparency = 1
+                mHrp.CanCollide = false
+                mHrp.CFrame = Camera.CFrame * CFrame.new(0, 0, -5)
             else
-                -- 머더 죽으면 히트박스 원상복구
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        local hrp = p.Character.HumanoidRootPart
-                        if hrp.Size.X > 5 then
-                            hrp.Size = Vector3.new(2, 2, 1)
-                            hrp.Transparency = 1
-                        end
-                    end
-                end
-            end
-        else
-            -- 기능 껐을 때 원상복구
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    local hrp = p.Character.HumanoidRootPart
-                    if hrp.Size.X > 5 then
-                        hrp.Size = Vector3.new(2, 2, 1)
-                        hrp.Transparency = 1
-                    end
+                -- 기능 꺼지면 히트박스 원상복구
+                if mHrp.Size.X > 5 or mHrp.Transparency == 1 then
+                    mHrp.Size = Vector3.new(2, 2, 1)
+                    mHrp.Transparency = 0
                 end
             end
         end
     end)
 
-    RunService.Heartbeat:Connect(function()
-        if Config.KillAllTP and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local myHrp = LocalPlayer.Character.HumanoidRootPart
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
-                    p.Character.HumanoidRootPart.CFrame = myHrp.CFrame * CFrame.new(0, 0, -3)
-                end
-            end
-        end
-    end)
-
+    -- ESP 및 잡다한 루프
     local espFolder = Instance.new("Folder", screenGui)
     espFolder.Name = "Valo_ESP_Exact"
     local gunEspFolder = Instance.new("Folder", screenGui)
@@ -515,7 +522,7 @@ local function LoadMurderMystery()
     singleGunLabel.Size = UDim2.new(0, 110, 0, 20)
     singleGunLabel.BackgroundTransparency = 1
     singleGunLabel.Text = "🔫 [떨어진 총]"
-    singleGunLabel.TextColor3 = Color3.fromRGB(180, 0, 255)
+    singleGunLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
     singleGunLabel.Font = Enum.Font.GothamBold
     singleGunLabel.TextSize = 12
     singleGunLabel.Visible = false
@@ -531,31 +538,16 @@ local function LoadMurderMystery()
         line.Rotation = math.deg(math.atan2(p2.Y - p1.Y, p2.X - p1.X)) - 90
     end
 
-    local wasGunDropped = false
-
     RunService.RenderStepped:Connect(function()
         espFolder:ClearAllChildren()
 
         local gunPart = FindDroppedGun()
-        
-        if gunPart and not wasGunDropped then
-            wasGunDropped = true
-            notifyLbl.Visible = true
-            task.delay(3, function() notifyLbl.Visible = false end)
-        elseif not gunPart then
-            wasGunDropped = false
-        end
-
-        if Config.ESP_GunDrop then
-            if gunPart then
-                local gunPos = gunPart:IsA("BasePart") and gunPart.Position or gunPart:GetPivot().Position
-                local pos, onScreen = Camera:WorldToViewportPoint(gunPos)
-                if onScreen then
-                    singleGunLabel.Position = UDim2.new(0, pos.X - 55, 0, pos.Y - 10)
-                    singleGunLabel.Visible = true
-                else
-                    singleGunLabel.Visible = false
-                end
+        if Config.ESP_GunDrop and gunPart then
+            local gunPos = gunPart:IsA("BasePart") and gunPart.Position or gunPart:GetPivot().Position
+            local pos, onScreen = Camera:WorldToViewportPoint(gunPos)
+            if onScreen then
+                singleGunLabel.Position = UDim2.new(0, pos.X - 55, 0, pos.Y - 10)
+                singleGunLabel.Visible = true
             else
                 singleGunLabel.Visible = false
             end
@@ -564,7 +556,7 @@ local function LoadMurderMystery()
         end
 
         for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
                 local char = p.Character
                 local hrp = char.HumanoidRootPart
                 local head = char:FindFirstChild("Head")
@@ -635,43 +627,6 @@ local function LoadMurderMystery()
     end)
 
     RunService.Heartbeat:Connect(function()
-        if Config.SkinChanger then
-            local tools = {}
-            if LocalPlayer.Character then for _, v in ipairs(LocalPlayer.Character:GetChildren()) do if v:IsA("Tool") then table.insert(tools, v) end end end
-            if LocalPlayer:FindFirstChild("Backpack") then for _, v in ipairs(LocalPlayer.Backpack:GetChildren()) do if v:IsA("Tool") then table.insert(tools, v) end end end
-
-            for _, tool in ipairs(tools) do
-                if tool:FindFirstChild("Handle") then
-                    local handle = tool.Handle
-                    local isKnife = tool.Name:lower():find("knife") or tool:FindFirstChild("KnifeServer")
-                    local isGun = tool.Name:lower():find("gun") or tool.Name:lower():find("revolver")
-                    
-                    local targetName = isKnife and "Plageux" or (isGun and "Sables" or nil)
-                    if targetName then
-                        local targetModel = game:GetService("ReplicatedStorage"):FindFirstChild(targetName, true) or game:GetService("ReplicatedStorage"):FindFirstChild("Summer", true)
-                        if targetModel and targetModel:FindFirstChild("Handle") then
-                            local tHandle = targetModel.Handle
-                            if handle:FindFirstChildOfClass("SpecialMesh") and tHandle:FindFirstChildOfClass("SpecialMesh") then
-                                local myM = handle:FindFirstChildOfClass("SpecialMesh")
-                                local tM = tHandle:FindFirstChildOfClass("SpecialMesh")
-                                myM.MeshId = tM.MeshId
-                                myM.TextureId = tM.TextureId
-                                myM.Scale = tM.Scale
-                                myM.Offset = tM.Offset
-                                myM.VertexColor = tM.VertexColor
-                            elseif handle:IsA("MeshPart") and tHandle:IsA("MeshPart") then
-                                handle.MeshId = tHandle.MeshId
-                                handle.TextureID = tHandle.TextureID
-                                handle.Size = tHandle.Size
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end)
-
-    RunService.Heartbeat:Connect(function()
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
             if Config.Speed and char.Humanoid.MoveDirection.Magnitude > 0 then
@@ -682,6 +637,7 @@ local function LoadMurderMystery()
             end
         end
     end)
+
     UserInputService.JumpRequest:Connect(function()
         if Config.Jump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -690,14 +646,10 @@ local function LoadMurderMystery()
 
     -- [ 머더 탭 연결 ]
     local left1, right1 = CreateTab("🔪")
-    AddHeader(left1, "Murder Cheats")
-    AddToggle(left1, "🔴 Aim Lock On Murderer (God-Tier)", function(v) Config.MurderAim = v end)
-    AddToggle(left1, "🔫 Auto Kill Murderer (Teleport Above & Shoot)", function(v) Config.AutoKillMurderer = v end)
-    AddToggle(left1, "💀 Kill All (TP All to Me)", function(v) Config.KillAllTP = v end)
+    AddHeader(left1, "God-Tier Murder Cheats")
+    AddToggle(left1, "🎯 Silent Aim (에임 안대도 100% 명중)", function(v) Config.SilentAim = v end)
+    AddToggle(left1, "🔫 Auto Kill Murderer (전자동 즉사)", function(v) Config.AutoKillMurderer = v end)
     
-    AddHeader(left1, "Hitbox & Wallbang")
-    AddToggle(left1, "🧱 Perfect Wallbang (벽뚫샷)", function(v) HandleWallbang(v) end)
-
     AddHeader(right1, "Gun Tools")
     AddToggle(right1, "🔲 Show TP Gun Button (버튼 표시)", function(v) 
         Config.TPGunButton = v 
@@ -719,7 +671,7 @@ local function LoadMurderMystery()
     AddToggle(left3, "Infinite Jump", function(v) Config.Jump = v end)
     AddToggle(left3, "Noclip (Walk Through Walls)", function(v) Config.Noclip = v end)
 
-    Tabs[1].Btn.TextColor3 = Color3.fromRGB(160, 100, 255)
+    Tabs[1].Btn.TextColor3 = Color3.fromRGB(255, 200, 200)
     Tabs[1].Ind.Visible = true
     Tabs[1].Container.Visible = true
     currentTab = Tabs[1]
