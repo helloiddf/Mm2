@@ -12,7 +12,7 @@ local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- 기존 UI 싹 다 초기화
 for _, v in pairs(playerGui:GetChildren()) do
-    if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "ValoStyle_Min" or v.Name == "WordChain_Hub" or v.Name == "TeleportGunGui" then
+    if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "ValoStyle_Min" or v.Name == "WordChain_Hub" or v.Name == "TeleportGunGui" or v.Name == "GunDropNotify" then
         v:Destroy()
     end
 end
@@ -607,12 +607,29 @@ local function LoadMurderMystery()
         end
     end)
 
+    -- 🔥 [추가됨] 보안관 사망 (총 드랍) 알림 UI 
+    local notifyGui = Instance.new("ScreenGui", playerGui)
+    notifyGui.Name = "GunDropNotify"
+    notifyGui.ResetOnSpawn = false
+    
+    local notifyLbl = Instance.new("TextLabel", notifyGui)
+    notifyLbl.Size = UDim2.new(0, 320, 0, 40)
+    notifyLbl.Position = UDim2.new(1, -340, 1, -80) -- 오른쪽 아래
+    notifyLbl.BackgroundColor3 = Color3.fromRGB(30, 20, 40)
+    notifyLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+    notifyLbl.Text = "🚨 보안관이 운지 뛰었습니다 텔포 하여 총을 먹어주세요."
+    notifyLbl.Font = Enum.Font.GothamBold
+    notifyLbl.TextSize = 13
+    notifyLbl.Visible = false
+    Instance.new("UICorner", notifyLbl).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", notifyLbl).Color = Color3.fromRGB(255, 50, 50)
+
     RunService.RenderStepped:Connect(function()
         if Config.MurderAim then
             for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Torso") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                     if GetPlayerRole(p) == "Murderer" then
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, p.Character.Head.Position)
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, p.Character.Torso.Position)
                         break
                     end
                 end
@@ -620,7 +637,7 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 AutoKillMurderer 로직: 접착제처럼 완벽 밀착(Tracking)
+    -- 🔥 AutoKillMurderer 완벽 밀착 및 정확도 대폭 상승 로직
     local isAutoKilling = false
     RunService.Heartbeat:Connect(function()
         if Config.AutoKillMurderer and not isAutoKilling and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -653,23 +670,24 @@ local function LoadMurderMystery()
 
                 if myGun and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
                     LocalPlayer.Character.Humanoid:EquipTool(myGun)
-                    task.wait(0.1)
+                    task.wait(0.15) -- 총 장착 시간 약간 더 확보
                     
-                    -- 🔥 0.6초 동안 머더 등 뒤에 찰거머리처럼 완벽 밀착 및 난사
+                    -- 🔥 개선: 너무 가까우면 히트박스 씹힘 발생. 4스터드 뒤, 1스터드 위로 이동 및 Torso 타겟팅
                     local startTime = tick()
                     while tick() - startTime < 0.6 do
                         if not murderer.Character or not murderer.Character:FindFirstChild("HumanoidRootPart") or murderer.Character.Humanoid.Health <= 0 then 
                             break 
                         end
                         
-                        -- 머더 등 뒤 2스터드에 지속적으로 고정
-                        hrp.CFrame = murderer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2.5)
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, murderer.Character.Head.Position)
+                        -- 피격 판정이 넓은 Torso를 타겟
+                        local targetPart = murderer.Character:FindFirstChild("Torso") or murderer.Character.HumanoidRootPart
+                        hrp.CFrame = targetPart.CFrame * CFrame.new(0, 1, 4)
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
                         
                         myGun:Activate() 
                         if mouse1click then mouse1click() else game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0)) end
                         
-                        task.wait(0.01) -- 아주 짧은 간격으로 위치 업데이트
+                        task.wait(0.01)
                     end
                     
                     task.wait(0.1)
@@ -718,11 +736,23 @@ local function LoadMurderMystery()
         line.Rotation = math.deg(math.atan2(p2.Y - p1.Y, p2.X - p1.X)) - 90
     end
 
+    local wasGunDropped = false
+
     RunService.RenderStepped:Connect(function()
         espFolder:ClearAllChildren()
 
+        local gunPart = FindDroppedGun()
+        
+        -- 🔥 [추가됨] 총 드랍 알람 트리거 로직
+        if gunPart and not wasGunDropped then
+            wasGunDropped = true
+            notifyLbl.Visible = true
+            task.delay(1.5, function() notifyLbl.Visible = false end)
+        elseif not gunPart then
+            wasGunDropped = false
+        end
+
         if Config.ESP_GunDrop then
-            local gunPart = FindDroppedGun()
             if gunPart then
                 local gunPos = gunPart:IsA("BasePart") and gunPart.Position or gunPart:GetPivot().Position
                 local pos, onScreen = Camera:WorldToViewportPoint(gunPos)
