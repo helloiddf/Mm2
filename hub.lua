@@ -604,14 +604,16 @@ local function LoadMurderMystery()
     Instance.new("UICorner", notifyLbl).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", notifyLbl).Color = Color3.fromRGB(255, 50, 50)
 
-    -- 🔥 [수정됨] Aim Lock 수정 (Torso 대신 HumanoidRootPart 타겟팅, 부드러운 카메라 이동(Lerp) 적용)
-    RunService.RenderStepped:Connect(function()
+    -- 🔥 [수정됨] Aim Lock 수정 (화면 떨림 방지 및 조준점 최적화 적용)
+    RunService.RenderStepped:Connect(function(deltaTime)
         if Config.MurderAim then
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                     if GetPlayerRole(p) == "Murderer" then
-                        local targetPos = p.Character.HumanoidRootPart.Position
-                        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 0.5)
+                        local hrp = p.Character.HumanoidRootPart
+                        local targetPos = hrp.Position + Vector3.new(0, 1.2, 0)
+                        local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+                        Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 8 * deltaTime)
                         break
                     end
                 end
@@ -625,20 +627,17 @@ local function LoadMurderMystery()
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                     if GetPlayerRole(p) == "Murderer" then
-                        -- 히트박스 화면 절반급으로 확장
                         local hrp = p.Character.HumanoidRootPart
                         hrp.Size = Vector3.new(100, 100, 100)
                         hrp.Transparency = 0.8
                         hrp.CanCollide = false
                         
-                        -- 내가 총을 들고 있다면 무지성 자동 클릭 (어디 쏴도 맞음)
                         local myGun = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Revolver"))
                         if myGun then
                             myGun:Activate()
                             if mouse1click then mouse1click() end
                         end
                     else
-                        -- 머더가 아닌 일반 플레이어/보안관 히트박스 원상 복구
                         local hrp = p.Character:FindFirstChild("HumanoidRootPart")
                         if hrp and hrp.Size.X > 5 then
                             hrp.Size = Vector3.new(2, 2, 1)
@@ -648,7 +647,6 @@ local function LoadMurderMystery()
                 end
             end
         else
-            -- 기능 껐을 때 전체 플레이어 히트박스 원상 복구
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = p.Character.HumanoidRootPart
