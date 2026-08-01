@@ -583,7 +583,6 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 [추가/수정] 총으로 텔포 후 원래 자리로 복귀하는 로직
     tpBtn.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             tpDragging = false
@@ -591,12 +590,12 @@ local function LoadMurderMystery()
                 local gunPart = FindDroppedGun()
                 if gunPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = LocalPlayer.Character.HumanoidRootPart
-                    local originalCFrame = hrp.CFrame -- 원래 위치 저장
+                    local originalCFrame = hrp.CFrame
                     
                     hrp.CFrame = gunPart:IsA("BasePart") and gunPart.CFrame or gunPart:GetPivot()
-                    task.wait(0.25) -- 총을 먹기 위해 0.25초 대기
+                    task.wait(0.25)
                     
-                    hrp.CFrame = originalCFrame -- 다시 원래 위치로 복귀
+                    hrp.CFrame = originalCFrame
                 else
                     tpBtn.Text = "❌ 총 없음!"
                     tpBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
@@ -621,6 +620,7 @@ local function LoadMurderMystery()
         end
     end)
 
+    -- 🔥 AutoKillMurderer 로직: 접착제처럼 완벽 밀착(Tracking)
     local isAutoKilling = false
     RunService.Heartbeat:Connect(function()
         if Config.AutoKillMurderer and not isAutoKilling and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -655,14 +655,24 @@ local function LoadMurderMystery()
                     LocalPlayer.Character.Humanoid:EquipTool(myGun)
                     task.wait(0.1)
                     
-                    hrp.CFrame = murderer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3.5)
+                    -- 🔥 0.6초 동안 머더 등 뒤에 찰거머리처럼 완벽 밀착 및 난사
+                    local startTime = tick()
+                    while tick() - startTime < 0.6 do
+                        if not murderer.Character or not murderer.Character:FindFirstChild("HumanoidRootPart") or murderer.Character.Humanoid.Health <= 0 then 
+                            break 
+                        end
+                        
+                        -- 머더 등 뒤 2스터드에 지속적으로 고정
+                        hrp.CFrame = murderer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2.5)
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, murderer.Character.Head.Position)
+                        
+                        myGun:Activate() 
+                        if mouse1click then mouse1click() else game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0)) end
+                        
+                        task.wait(0.01) -- 아주 짧은 간격으로 위치 업데이트
+                    end
+                    
                     task.wait(0.1)
-                    
-                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, murderer.Character.Head.Position)
-                    myGun:Activate() 
-                    if mouse1click then mouse1click() else game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0)) end
-                    
-                    task.wait(0.5)
                     hrp.CFrame = oldPos 
                 end
             end
@@ -859,8 +869,6 @@ local function LoadMurderMystery()
     AddHeader(left1, "Murder Cheats")
     AddToggle(left1, "🔴 Aim Lock On Murderer Only", function(v) Config.MurderAim = v end)
     AddToggle(left1, "🔫 Auto Kill Murderer (TP & Shoot)", function(v) Config.AutoKillMurderer = v end)
-    
-    -- 🔥 [추가] Kill All 버튼 복구 완료
     AddToggle(left1, "💀 Kill All (TP All to Me)", function(v) Config.KillAllTP = v end)
     
     AddHeader(left1, "Hitbox & Wallbang")
