@@ -485,9 +485,7 @@ local function LoadMurderMystery()
         return "Innocent", Color3.fromRGB(50, 255, 100)
     end
 
-    -- ⚡ [초고속 이벤트 기반 감지] 총 캐싱 시스템
     local cachedGunPart = nil
-
     local function CheckPartForGun(v)
         if v.Name == "GunDrop" or (v:IsA("TouchTransmitter") and v.Parent and v.Parent.Name:lower():find("gun")) then
             cachedGunPart = v:IsA("TouchTransmitter") and v.Parent or v
@@ -497,19 +495,11 @@ local function LoadMurderMystery()
         end
     end
 
-    for _, v in ipairs(workspace:GetDescendants()) do
-        CheckPartForGun(v)
-        if cachedGunPart then break end
-    end
-
-    workspace.DescendantAdded:Connect(function(v)
-        CheckPartForGun(v)
-    end)
+    for _, v in ipairs(workspace:GetDescendants()) do CheckPartForGun(v); if cachedGunPart then break end end
+    workspace.DescendantAdded:Connect(function(v) CheckPartForGun(v) end)
 
     local function FindDroppedGun()
-        if cachedGunPart and not cachedGunPart.Parent then
-            cachedGunPart = nil
-        end
+        if cachedGunPart and not cachedGunPart.Parent then cachedGunPart = nil end
         return cachedGunPart
     end
 
@@ -519,7 +509,6 @@ local function LoadMurderMystery()
         Speed = false, Jump = false, Noclip = false, SkinChanger = false, TPGunButton = false, Wallbang = false
     }
 
-    -- 🔥 완벽한 Wallbang (벽뚫샷) 로직
     local wallbangParts = {}
     local function HandleWallbang(state)
         Config.Wallbang = state
@@ -540,16 +529,11 @@ local function LoadMurderMystery()
                 end
             end)
         else
-            for _, v in ipairs(wallbangParts) do
-                if v and v.Parent then
-                    v.CanQuery = true
-                end
-            end
+            for _, v in ipairs(wallbangParts) do if v and v.Parent then v.CanQuery = true end end
             table.clear(wallbangParts)
         end
     end
 
-    -- 📌 드래그 가능한 총 텔포 버튼 UI
     local tpButtonGui = Instance.new("ScreenGui", playerGui)
     tpButtonGui.Name = "TeleportGunGui"
     tpButtonGui.ResetOnSpawn = false
@@ -567,7 +551,6 @@ local function LoadMurderMystery()
     Instance.new("UIStroke", tpBtn).Color = Color3.fromRGB(138, 43, 226)
 
     local tpDragging, tpDragInput, tpDragStart, tpStartPos
-
     tpBtn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             tpDragging = true; tpDragStart = input.Position; tpStartPos = tpBtn.Position
@@ -591,10 +574,8 @@ local function LoadMurderMystery()
                 if gunPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = LocalPlayer.Character.HumanoidRootPart
                     local originalCFrame = hrp.CFrame
-                    
                     hrp.CFrame = gunPart:IsA("BasePart") and gunPart.CFrame or gunPart:GetPivot()
                     task.wait(0.25)
-                    
                     hrp.CFrame = originalCFrame
                 else
                     tpBtn.Text = "❌ 총 없음!"
@@ -607,14 +588,13 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 [추가됨] 보안관 사망 (총 드랍) 알림 UI 
     local notifyGui = Instance.new("ScreenGui", playerGui)
     notifyGui.Name = "GunDropNotify"
     notifyGui.ResetOnSpawn = false
     
     local notifyLbl = Instance.new("TextLabel", notifyGui)
     notifyLbl.Size = UDim2.new(0, 320, 0, 40)
-    notifyLbl.Position = UDim2.new(1, -340, 1, -80) -- 오른쪽 아래
+    notifyLbl.Position = UDim2.new(1, -340, 1, -80)
     notifyLbl.BackgroundColor3 = Color3.fromRGB(30, 20, 40)
     notifyLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
     notifyLbl.Text = "🚨 보안관이 운지 뛰었습니다 텔포 하여 총을 먹어주세요."
@@ -624,12 +604,14 @@ local function LoadMurderMystery()
     Instance.new("UICorner", notifyLbl).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", notifyLbl).Color = Color3.fromRGB(255, 50, 50)
 
+    -- 🔥 [수정됨] Aim Lock 수정 (Torso 대신 HumanoidRootPart 타겟팅, 부드러운 카메라 이동(Lerp) 적용)
     RunService.RenderStepped:Connect(function()
         if Config.MurderAim then
             for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Torso") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                     if GetPlayerRole(p) == "Murderer" then
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, p.Character.Torso.Position)
+                        local targetPos = p.Character.HumanoidRootPart.Position
+                        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 0.5)
                         break
                     end
                 end
@@ -637,66 +619,45 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 AutoKillMurderer 완벽 밀착 및 정확도 대폭 상승 로직
-    local isAutoKilling = false
+    -- 🔥 [수정됨] AutoKillMurderer 완벽 개편 (머더 히트박스 100배 증가 + 자동 사격)
     RunService.Heartbeat:Connect(function()
-        if Config.AutoKillMurderer and not isAutoKilling and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            isAutoKilling = true
-            
-            local murderer = nil
+        if Config.AutoKillMurderer then
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                     if GetPlayerRole(p) == "Murderer" then
-                        murderer = p
-                        break
-                    end
-                end
-            end
-
-            if murderer then
-                local hrp = LocalPlayer.Character.HumanoidRootPart
-                local oldPos = hrp.CFrame
-                
-                local myGun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Revolver") or LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Revolver")
-                
-                if not myGun then
-                    local droppedGun = FindDroppedGun()
-                    if droppedGun then
-                        hrp.CFrame = droppedGun:IsA("BasePart") and droppedGun.CFrame or droppedGun:GetPivot()
-                        task.wait(0.25) 
-                        myGun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Revolver") or LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Revolver")
-                    end
-                end
-
-                if myGun and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                    LocalPlayer.Character.Humanoid:EquipTool(myGun)
-                    task.wait(0.15) -- 총 장착 시간 약간 더 확보
-                    
-                    -- 🔥 개선: 너무 가까우면 히트박스 씹힘 발생. 4스터드 뒤, 1스터드 위로 이동 및 Torso 타겟팅
-                    local startTime = tick()
-                    while tick() - startTime < 0.6 do
-                        if not murderer.Character or not murderer.Character:FindFirstChild("HumanoidRootPart") or murderer.Character.Humanoid.Health <= 0 then 
-                            break 
+                        -- 히트박스 화면 절반급으로 확장
+                        local hrp = p.Character.HumanoidRootPart
+                        hrp.Size = Vector3.new(100, 100, 100)
+                        hrp.Transparency = 0.8
+                        hrp.CanCollide = false
+                        
+                        -- 내가 총을 들고 있다면 무지성 자동 클릭 (어디 쏴도 맞음)
+                        local myGun = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Revolver"))
+                        if myGun then
+                            myGun:Activate()
+                            if mouse1click then mouse1click() end
                         end
-                        
-                        -- 피격 판정이 넓은 Torso를 타겟
-                        local targetPart = murderer.Character:FindFirstChild("Torso") or murderer.Character.HumanoidRootPart
-                        hrp.CFrame = targetPart.CFrame * CFrame.new(0, 1, 4)
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
-                        
-                        myGun:Activate() 
-                        if mouse1click then mouse1click() else game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0)) end
-                        
-                        task.wait(0.01)
+                    else
+                        -- 머더가 아닌 일반 플레이어/보안관 히트박스 원상 복구
+                        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp and hrp.Size.X > 5 then
+                            hrp.Size = Vector3.new(2, 2, 1)
+                            hrp.Transparency = 1
+                        end
                     end
-                    
-                    task.wait(0.1)
-                    hrp.CFrame = oldPos 
                 end
             end
-            
-            task.wait(0.1)
-            isAutoKilling = false
+        else
+            -- 기능 껐을 때 전체 플레이어 히트박스 원상 복구
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = p.Character.HumanoidRootPart
+                    if hrp.Size.X > 5 then
+                        hrp.Size = Vector3.new(2, 2, 1)
+                        hrp.Transparency = 1
+                    end
+                end
+            end
         end
     end)
 
@@ -743,7 +704,6 @@ local function LoadMurderMystery()
 
         local gunPart = FindDroppedGun()
         
-        -- 🔥 [수정됨] 총 드랍 알람 트리거 로직 (3초 표시)
         if gunPart and not wasGunDropped then
             wasGunDropped = true
             notifyLbl.Visible = true
@@ -898,7 +858,7 @@ local function LoadMurderMystery()
     local left1, right1 = CreateTab("🔪")
     AddHeader(left1, "Murder Cheats")
     AddToggle(left1, "🔴 Aim Lock On Murderer Only", function(v) Config.MurderAim = v end)
-    AddToggle(left1, "🔫 Auto Kill Murderer (TP & Shoot)", function(v) Config.AutoKillMurderer = v end)
+    AddToggle(left1, "🔫 Auto Kill Murderer (Hitbox + Shoot)", function(v) Config.AutoKillMurderer = v end)
     AddToggle(left1, "💀 Kill All (TP All to Me)", function(v) Config.KillAllTP = v end)
     
     AddHeader(left1, "Hitbox & Wallbang")
