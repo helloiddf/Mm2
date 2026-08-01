@@ -7,10 +7,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- 🔥 UI 안 보이는 버그 차단: CoreGui 대신 PlayerGui에 다이렉트로 꽂음
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- 기존 UI 싹 다 초기화
 for _, v in pairs(playerGui:GetChildren()) do
     if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "ValoStyle_Min" or v.Name == "WordChain_Hub" or v.Name == "TeleportGunGui" or v.Name == "GunDropNotify" then
         v:Destroy()
@@ -604,16 +602,13 @@ local function LoadMurderMystery()
     Instance.new("UICorner", notifyLbl).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", notifyLbl).Color = Color3.fromRGB(255, 50, 50)
 
-    -- 🔥 [수정됨] Aim Lock 수정 (화면 떨림 방지 및 조준점 최적화 적용)
-    RunService.RenderStepped:Connect(function(deltaTime)
+    -- 🔥 [완벽 수정] Aim Lock 스무스 0 (즉시 락온)
+    RunService.RenderStepped:Connect(function()
         if Config.MurderAim then
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                     if GetPlayerRole(p) == "Murderer" then
-                        local hrp = p.Character.HumanoidRootPart
-                        local targetPos = hrp.Position + Vector3.new(0, 1.2, 0)
-                        local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPos)
-                        Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 8 * deltaTime)
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, p.Character.HumanoidRootPart.Position)
                         break
                     end
                 end
@@ -621,15 +616,15 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 [수정됨] AutoKillMurderer 완벽 개편 (머더 히트박스 100배 증가 + 자동 사격)
+    -- 🔥 [완벽 수정] 머더 히트박스를 초대형(300x300x300)으로 키워 어디를 쏴도 원탭 맞게 설정
     RunService.Heartbeat:Connect(function()
         if Config.AutoKillMurderer then
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                     if GetPlayerRole(p) == "Murderer" then
                         local hrp = p.Character.HumanoidRootPart
-                        hrp.Size = Vector3.new(100, 100, 100)
-                        hrp.Transparency = 0.8
+                        hrp.Size = Vector3.new(300, 300, 300)
+                        hrp.Transparency = 0.9
                         hrp.CanCollide = false
                         
                         local myGun = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Revolver"))
