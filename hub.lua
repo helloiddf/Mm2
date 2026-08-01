@@ -743,11 +743,11 @@ local function LoadMurderMystery()
 
         local gunPart = FindDroppedGun()
         
-        -- 🔥 [추가됨] 총 드랍 알람 트리거 로직
+        -- 🔥 [수정됨] 총 드랍 알람 트리거 로직 (3초 표시)
         if gunPart and not wasGunDropped then
             wasGunDropped = true
             notifyLbl.Visible = true
-            task.delay(1.5, function() notifyLbl.Visible = false end)
+            task.delay(3, function() notifyLbl.Visible = false end)
         elseif not gunPart then
             wasGunDropped = false
         end
