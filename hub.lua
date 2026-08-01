@@ -7,6 +7,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
+-- 기존 GUI 삭제
 for _, v in pairs(CoreGui:GetChildren()) do
     if v.Name == "MobileMM2Hub" or v.Name == "SpinCrosshairGui" or v.Name == "GunEspFolder" or v.Name == "ValoStyle_Min" or v.Name == "TeleportGunGui" then 
         v:Destroy() 
@@ -271,14 +272,13 @@ local function GetPlayerRole(player)
 end
 
 local Config = {
-    MurderAim = false, CurveBullets = false, PredictionEnabled = false, Prediction = 0.15,
-    TriggerBot = false, TriggerBotFOV = 50, Wallbang = false, AutoTeleportGun = false,
-    ESP_Box = false, ESP_Name = false, ESP_Skeleton = false, ESP_GunDrop = false,
+    MurderAim = false, HitboxExpander = false, TriggerBot = false, TriggerBotFOV = 50, Wallbang = false, 
+    AutoTeleportGun = false, ESP_Box = false, ESP_Name = false, ESP_Skeleton = false, ESP_GunDrop = false,
     DrawFOV = false, FOVSize = 120, RainbowFOV = false, SpinCrosshair = false, Crosshair = false,
-    RainbowBullet = false, BulletColor = "Normal", Speed = false, Jump = false, Noclip = false, KillAllTP = false
+    RainbowBullet = false, Speed = false, Jump = false, Noclip = false, KillAllTP = false, FPSBoost = false
 }
 
--- 🔥 FOV 원 내부가 비어있도록 Filled = false 명시 및 정중앙 고정
+-- 🎯 속이 빈 정중앙 고정 FOV
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
 fovCircle.Thickness = 1.5
@@ -291,17 +291,13 @@ RunService.RenderStepped:Connect(function()
         fovCircle.Visible = true
         fovCircle.Radius = Config.FOVSize
         fovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        if Config.RainbowFOV then
-            fovCircle.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
-        else
-            fovCircle.Color = Color3.fromRGB(255, 255, 255)
-        end
+        if Config.RainbowFOV then fovCircle.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1) else fovCircle.Color = Color3.fromRGB(255, 255, 255) end
     else
         fovCircle.Visible = false
     end
 end)
 
--- 🔥 돌아가는 스핀 조준점 및 기본 조준점을 화면 '정중앙'에 고정
+-- 🎯 초고속 두꺼운 십자 스핀 조준점
 local crosshairGui = Instance.new("ScreenGui", CoreGui)
 crosshairGui.Name = "SpinCrosshairGui"
 local crosshairHolder = Instance.new("Frame", crosshairGui)
@@ -313,8 +309,9 @@ crosshairHolder.BackgroundTransparency = 1
 local cLines = {}
 for i = 1, 4 do
     local line = Instance.new("Frame", crosshairHolder)
-    line.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
+    line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     line.BorderSizePixel = 0
+    line.AnchorPoint = Vector2.new(0.5, 0.5)
     table.insert(cLines, line)
 end
 
@@ -322,19 +319,19 @@ RunService.RenderStepped:Connect(function()
     local isAiming = Config.Crosshair or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
     if isAiming then
         crosshairHolder.Visible = true
-        local t = tick() * 12
+        local t = tick() * 35 
         for idx, line in ipairs(cLines) do
+            if Config.RainbowFOV then line.BackgroundColor3 = Color3.fromHSV(tick() % 5 / 5, 1, 1) else line.BackgroundColor3 = Color3.fromRGB(255, 255, 255) end
             if Config.SpinCrosshair then
                 local angle = (idx * math.pi / 2) + t
-                local dist = 12 + math.sin(tick() * 5) * 3
-                line.Size = UDim2.new(0, 8, 0, 3)
-                -- 중심점(0.5, 0.5)을 기준으로 정확히 회전하도록 수정
-                line.Position = UDim2.new(0.5, math.cos(angle) * dist - 4, 0.5, math.sin(angle) * dist - 1.5)
+                local dist = 16
+                line.Size = UDim2.new(0, 6, 0, 6)
+                line.Position = UDim2.new(0.5, math.cos(angle) * dist, 0.5, math.sin(angle) * dist)
             else
-                if idx == 1 then line.Size = UDim2.new(0, 2, 0, 10); line.Position = UDim2.new(0.5, -1, 0.5, -12)
-                elseif idx == 2 then line.Size = UDim2.new(0, 2, 0, 10); line.Position = UDim2.new(0.5, -1, 0.5, 2)
-                elseif idx == 3 then line.Size = UDim2.new(0, 10, 0, 2); line.Position = UDim2.new(0.5, -12, 0.5, -1)
-                elseif idx == 4 then line.Size = UDim2.new(0, 10, 0, 2); line.Position = UDim2.new(0.5, 2, 0.5, -1)
+                if idx == 1 then line.Size = UDim2.new(0, 6, 0, 6); line.Position = UDim2.new(0.5, 0, 0.5, -16)
+                elseif idx == 2 then line.Size = UDim2.new(0, 6, 0, 6); line.Position = UDim2.new(0.5, 0, 0.5, 16)
+                elseif idx == 3 then line.Size = UDim2.new(0, 6, 0, 6); line.Position = UDim2.new(0.5, -16, 0.5, 0)
+                elseif idx == 4 then line.Size = UDim2.new(0, 6, 0, 6); line.Position = UDim2.new(0.5, 16, 0.5, 0)
                 end
             end
         end
@@ -343,23 +340,103 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 에임락 및 곡선 유도
+-- 🔥 모바일용 부드러운 에임락 카메라 보정
 RunService.RenderStepped:Connect(function()
-    if Config.MurderAim or Config.CurveBullets then
+    if Config.MurderAim then
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                 if GetPlayerRole(p) == "Murderer" then
-                    local targetPos = p.Character.Head.Position
-                    if Config.PredictionEnabled and p.Character:FindFirstChild("HumanoidRootPart") then
-                        targetPos = targetPos + (p.Character.HumanoidRootPart.AssemblyLinearVelocity * Config.Prediction)
-                    end
-                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 0.35)
+                    -- 억지로 꺾이지 않게 Lerp(0.5)로 부드럽게 화면을 유도
+                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, p.Character.Head.Position), 0.5)
                     break
                 end
             end
         end
     end
 end)
+
+-- 🔥 100% 명중 벽뚫 유도탄 (히트박스 초대형 확장)
+RunService.Heartbeat:Connect(function()
+    if Config.HitboxExpander then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                if GetPlayerRole(p) == "Murderer" then
+                    local hrp = p.Character.HumanoidRootPart
+                    -- 맞는 판정을 엄청나게 크게 만들어서 대충 쏴도 다 맞게 함
+                    hrp.Size = Vector3.new(40, 40, 40) 
+                    hrp.Transparency = 0.99 -- 눈에는 안 보이게 처리
+                    hrp.CanCollide = false
+                else
+                    -- 무고한 사람이나 보안관은 원래 크기 유지
+                    local hrp = p.Character.HumanoidRootPart
+                    if hrp.Size.X > 5 then
+                        hrp.Size = Vector3.new(2, 2, 1)
+                        hrp.Transparency = 1
+                    end
+                end
+            end
+        end
+    else
+        -- 껐을 때 원상복구
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = p.Character.HumanoidRootPart
+                if hrp.Size.X > 5 then
+                    hrp.Size = Vector3.new(2, 2, 1)
+                    hrp.Transparency = 1
+                end
+            end
+        end
+    end
+end)
+
+-- 🔥 완벽한 Wallbang (총알이 모든 벽을 뚫고 지나가게 처리)
+task.spawn(function()
+    while task.wait(0.5) do
+        if Config.Wallbang then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    local isPlayer = v.Parent and (v.Parent:FindFirstChild("Humanoid") or (v.Parent.Parent and v.Parent.Parent:FindFirstChild("Humanoid")))
+                    -- 플레이어가 아닌 맵 구조물의 총알 충돌 판정(Query)을 없애버림
+                    if not isPlayer and not v:IsDescendantOf(Camera) then
+                        v.CanQuery = false
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- 🌈 무지개 총알
+RunService.Heartbeat:Connect(function()
+    if Config.RainbowBullet then
+        local color = Color3.fromHSV(tick() % 3 / 3, 1, 1)
+        local char = LocalPlayer.Character
+        if char then
+            local tool = char:FindFirstChildOfClass("Tool")
+            if tool and (tool.Name:lower():find("gun") or tool.Name:lower():find("revolver") or tool.Name:lower():find("knife")) then
+                for _, v in pairs(tool:GetDescendants()) do
+                    if v:IsA("BasePart") then v.Color = color end
+                end
+            end
+        end
+    end
+end)
+
+-- 📉 FPS Boost (프레임 렉 완벽 제거)
+local function FPSBoost(state)
+    if state then
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            end
+        end
+        game.Lighting.GlobalShadows = false
+    end
+end
 
 -- 트리거봇
 local trigDebounce = false
@@ -387,24 +464,20 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 벽뚫샷
-task.spawn(function()
-    while task.wait(1) do
-        if Config.Wallbang then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("BasePart") then
-                    local isPlayer = v.Parent and (v.Parent:FindFirstChild("Humanoid") or (v.Parent.Parent and v.Parent.Parent:FindFirstChild("Humanoid")))
-                    if not isPlayer and not v:IsDescendantOf(Camera) then
-                        v:SetAttribute("WasWallbang", true)
-                        v.CanQuery = false
-                    end
-                end
-            end
+-- 🔫 드랍된 총 탐지 함수
+local function FindDroppedGun()
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v.Name == "GunDrop" then
+            if v:IsA("BasePart") then return v end
+            local part = v:FindFirstChildWhichIsA("BasePart")
+            if part then return part end
+            return v
         end
     end
-end)
+    return nil
+end
 
--- 총 텔포 버튼
+-- 📌 [드래그 가능한] 총 텔포 버튼 UI
 local tpButtonGui = Instance.new("ScreenGui", CoreGui)
 tpButtonGui.Name = "TeleportGunGui"
 tpButtonGui.ResetOnSpawn = false
@@ -420,66 +493,81 @@ tpBtn.TextSize = 13
 Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 8)
 Instance.new("UIStroke", tpBtn).Color = Color3.fromRGB(138, 43, 226)
 
-local function FindDroppedGun()
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if (v:IsA("Model") or v:IsA("BasePart")) and (v.Name:lower():find("gun") or v.Name:lower():find("revolver") or v.Name == "GunDrop") then
-            local part = v:IsA("BasePart") and v or v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")
-            if part then return part end
-        end
-    end
-    return nil
-end
+local tpDragging, tpDragInput, tpDragStart, tpStartPos
 
-tpBtn.MouseButton1Click:Connect(function()
-    local gunPart = FindDroppedGun()
-    if gunPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local hrp = LocalPlayer.Character.HumanoidRootPart
-        local origPos = hrp.CFrame
-        hrp.CFrame = gunPart.CFrame + Vector3.new(0, 2, 0)
-        task.wait(0.1)
-        hrp.CFrame = origPos
-    else
-        tpBtn.Text = "❌ 총 없음!"
-        task.wait(1)
-        tpBtn.Text = "🔫 총 텔포하기"
+tpBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        tpDragging = true; tpDragStart = input.Position; tpStartPos = tpBtn.Position
     end
 end)
 
--- 보라색 총 ESP 및 자동 텔포 줍기
+tpBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then tpDragInput = input end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == tpDragInput and tpDragging then
+        local delta = input.Position - tpDragStart
+        tpBtn.Position = UDim2.new(tpStartPos.X.Scale, tpStartPos.X.Offset + delta.X, tpStartPos.Y.Scale, tpStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+tpBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        tpDragging = false
+        if (input.Position - tpDragStart).Magnitude < 10 then
+            local gunPart = FindDroppedGun()
+            if gunPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = LocalPlayer.Character.HumanoidRootPart
+                local origPos = hrp.CFrame
+                hrp.CFrame = gunPart.CFrame + Vector3.new(0, 2, 0)
+                task.wait(0.2)
+                hrp.CFrame = origPos
+            else
+                tpBtn.Text = "❌ 총 없음!"
+                tpBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+                task.wait(1)
+                tpBtn.Text = "🔫 총 텔포하기"
+                tpBtn.TextColor3 = Color3.fromRGB(180, 0, 255)
+            end
+        end
+    end
+end)
+
+-- 📌 보라색 총 ESP 및 한 번만 자동 텔포
 local gunEspFolder = Instance.new("Folder", screenGui)
 gunEspFolder.Name = "GunEspFolder"
 local isTeleportingGun = false
+local lastTeleportedGun = nil
 
 RunService.Heartbeat:Connect(function()
     gunEspFolder:ClearAllChildren()
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if (v:IsA("Model") or v:IsA("BasePart")) and (v.Name:lower():find("gun") or v.Name:lower():find("revolver") or v.Name == "GunDrop") then
-            local part = v:IsA("BasePart") and v or v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")
-            if part then
-                local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                if onScreen and Config.ESP_GunDrop then
-                    local lbl = Instance.new("TextLabel", gunEspFolder)
-                    lbl.Size = UDim2.new(0, 110, 0, 20)
-                    lbl.Position = UDim2.new(0, pos.X - 55, 0, pos.Y - 10)
-                    lbl.BackgroundTransparency = 1
-                    lbl.Text = "🔫 [DROPPED GUN]"
-                    lbl.TextColor3 = Color3.fromRGB(180, 0, 255)
-                    lbl.Font = Enum.Font.GothamBold
-                    lbl.TextSize = 11
-                end
-
-                if Config.AutoTeleportGun and not isTeleportingGun and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    isTeleportingGun = true
-                    local hrp = LocalPlayer.Character.HumanoidRootPart
-                    local origPos = hrp.CFrame
-                    hrp.CFrame = part.CFrame + Vector3.new(0, 2, 0)
-                    task.wait(0.1)
-                    hrp.CFrame = origPos
-                    task.wait(0.5)
-                    isTeleportingGun = false
-                end
-            end
+    local gunPart = FindDroppedGun()
+    if gunPart then
+        local pos, onScreen = Camera:WorldToViewportPoint(gunPart.Position)
+        if onScreen and Config.ESP_GunDrop then
+            local lbl = Instance.new("TextLabel", gunEspFolder)
+            lbl.Size = UDim2.new(0, 110, 0, 20)
+            lbl.Position = UDim2.new(0, pos.X - 55, 0, pos.Y - 10)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = "🔫 [DROPPED GUN]"
+            lbl.TextColor3 = Color3.fromRGB(180, 0, 255)
+            lbl.Font = Enum.Font.GothamBold
+            lbl.TextSize = 11
         end
+        if Config.AutoTeleportGun and not isTeleportingGun and gunPart ~= lastTeleportedGun and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            isTeleportingGun = true
+            lastTeleportedGun = gunPart 
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            local origPos = hrp.CFrame
+            hrp.CFrame = gunPart.CFrame + Vector3.new(0, 2, 0)
+            task.wait(0.2)
+            hrp.CFrame = origPos
+            task.wait(0.5)
+            isTeleportingGun = false
+        end
+    else
+        lastTeleportedGun = nil
     end
 end)
 
@@ -489,9 +577,7 @@ espFolder.Name = "Valo_ESP_Exact"
 
 local function DrawLine(p1, p2, parent, color, thickness)
     local line = Instance.new("Frame", parent)
-    line.BackgroundColor3 = color
-    line.BorderSizePixel = 0
-    line.AnchorPoint = Vector2.new(0.5, 0.5)
+    line.BackgroundColor3 = color; line.BorderSizePixel = 0; line.AnchorPoint = Vector2.new(0.5, 0.5)
     local dist = (p2 - p1).Magnitude
     line.Size = UDim2.new(0, thickness, 0, dist)
     line.Position = UDim2.new(0, (p1.X + p2.X)/2, 0, (p1.Y + p2.Y)/2)
@@ -524,22 +610,13 @@ RunService.RenderStepped:Connect(function()
                         local w = h / 2
                         if Config.ESP_Box then
                             local box = Instance.new("Frame", espFolder)
-                            box.Size = UDim2.new(0, w, 0, h)
-                            box.Position = UDim2.new(0, hrpPos.X - w/2, 0, headPos.Y)
-                            box.BackgroundTransparency = 1
-                            local stroke = Instance.new("UIStroke", box)
-                            stroke.Color = roleColor
-                            stroke.Thickness = 1.2
+                            box.Size = UDim2.new(0, w, 0, h); box.Position = UDim2.new(0, hrpPos.X - w/2, 0, headPos.Y); box.BackgroundTransparency = 1
+                            local stroke = Instance.new("UIStroke", box); stroke.Color = roleColor; stroke.Thickness = 1.2
                         end
                         if Config.ESP_Name then
                             local lbl = Instance.new("TextLabel", espFolder)
-                            lbl.Size = UDim2.new(0, 120, 0, 15)
-                            lbl.Position = UDim2.new(0, hrpPos.X - 60, 0, headPos.Y - 18)
-                            lbl.BackgroundTransparency = 1
-                            lbl.Text = p.Name .. " [" .. roleName .. "]"
-                            lbl.TextColor3 = roleColor
-                            lbl.Font = Enum.Font.GothamBold
-                            lbl.TextSize = 10
+                            lbl.Size = UDim2.new(0, 120, 0, 15); lbl.Position = UDim2.new(0, hrpPos.X - 60, 0, headPos.Y - 18); lbl.BackgroundTransparency = 1
+                            lbl.Text = p.Name .. " [" .. roleName .. "]"; lbl.TextColor3 = roleColor; lbl.Font = Enum.Font.GothamBold; lbl.TextSize = 10
                         end
                     end
                 end
@@ -575,17 +652,15 @@ end)
 -- 탭 구성
 local left1, right1 = CreateTab("🎯")
 AddHeader(left1, "Combat & Aim")
-AddToggle(left1, "🔴 Aim Lock On Murderer", function(v) Config.MurderAim = v end)
-AddToggle(left1, "🧲 Curve Bullets (총알 유도)", function(v) Config.CurveBullets = v end)
-AddToggle(left1, "🎯 Prediction (예측샷)", function(v) Config.PredictionEnabled = v end)
-AddSlider(left1, "   ↳ 예측 강도", 0, 100, 15, function(val) Config.Prediction = val / 100 end)
+AddToggle(left1, "🔴 Smooth Aim Lock (부드러운 에임)", function(v) Config.MurderAim = v end)
+AddToggle(left1, "🧲 Hitbox Expander (대충 쏴도 다맞음)", function(v) Config.HitboxExpander = v end)
+AddToggle(left1, "🧱 Perfect Wallbang (벽뚫샷 모드)", function(v) Config.Wallbang = v end)
 
 AddHeader(left1, "TriggerBot")
 AddToggle(left1, "🔫 TriggerBot (자동 발사)", function(v) Config.TriggerBot = v end)
-AddSlider(left1, "   ↳ Trigger 범위", 5, 100, 50, function(val) Config.TriggerBotFOV = val end)
+AddSlider(left1, "   ↳ Trigger 범위 조절", 5, 100, 50, function(val) Config.TriggerBotFOV = val end)
 
 AddHeader(right1, "Misc Tools")
-AddToggle(right1, "🧱 Wallbang (벽뚫샷)", function(v) Config.Wallbang = v end)
 AddToggle(right1, "⚡ Auto Teleport Gun (자동 총 줍기)", function(v) Config.AutoTeleportGun = v end)
 
 local left2, right2 = CreateTab("👁")
@@ -594,16 +669,17 @@ AddToggle(left2, "ESP Box", function(v) Config.ESP_Box = v end)
 AddToggle(left2, "ESP Name", function(v) Config.ESP_Name = v end)
 AddToggle(left2, "💀 R6 Detailed Skeleton", function(v) Config.ESP_Skeleton = v end)
 AddToggle(left2, "🟣 ESP Dropped Gun", function(v) Config.ESP_GunDrop = v end)
+AddToggle(left2, "📉 FPS Boost (랙 제거/그래픽↓)", function(v) FPSBoost(v) Config.FPSBoost = v end)
 
 AddHeader(right2, "FOV & Crosshair")
 AddToggle(right2, "⭕ Draw FOV Circle", function(v) Config.DrawFOV = v end)
 AddSlider(right2, "   ↳ FOV 크기", 1, 300, 120, function(val) Config.FOVSize = val end)
 AddToggle(right2, "➕ Draw Crosshair (조준점)", function(v) Config.Crosshair = v end)
-AddToggle(right2, "🌀 Spin Crosshair (스핀 조준점)", function(v) Config.SpinCrosshair = v end)
+AddToggle(right2, "🌀 Spin Crosshair (초고속 스핀)", function(v) Config.SpinCrosshair = v end)
 
 local left3, right3 = CreateTab("✨")
 AddHeader(left3, "Custom Bullet FX")
-AddToggle(left3, "🌈 Rainbow Bullets", function(v) Config.RainbowBullet = v end)
+AddToggle(left3, "🌈 Rainbow Bullets (무지개 총)", function(v) Config.RainbowBullet = v end)
 
 local left4, right4 = CreateTab("🏃")
 AddHeader(left4, "Movement & Misc")
