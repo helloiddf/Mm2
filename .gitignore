@@ -1,41 +1,318 @@
-# Compiled Lua sources
-luac.out
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-# luarocks build files
-*.src.rock
-*.zip
-*.tar.gz
+-- 기존 GUI 삭제
+for _, v in pairs(CoreGui:GetChildren()) do
+    if v.Name == "WordChainHack" then 
+        v:Destroy() 
+    end
+end
 
-# Object files
-*.o
-*.os
-*.ko
-*.obj
-*.elf
+-- 💥 로블록스 한국 끝말잇기 초종결급 대규모 데이터베이스 (메가 확장판)
+local OneShotDict = {
+    ["위"] = {"위장병", "위성방송", "위험물질", "위스키", "위장전입", "위치추적기", "위생사", "위장꾼", "위안부", "위액"},
+    ["왕"] = {"왕관", "왕거미", "왕고들빼기", "왕소금", "왕밤나무", "왕새우", "왕지네", "왕도둑", "왕대포"},
+    ["껑"] = {"껑충껑충", "껑질", "껑술", "껑정거리다"},
+    ["돔"] = {"돔베기", "돔니켈", "돔고기", "돔파이프", "돔형텐트"}, 
+    ["축"] = {"축전지", "축구화", "축농증", "축제", "축지법", "축산업", "축전기", "축성술", "축조기"},
+    ["듐"] = {"듐발생기", "듐니켈", "듐합금"},
 
-# Precompiled Headers
-*.gch
-*.pch
+    ["질"] = {"질소화물", "질산나트륨", "질소기체", "질소화합물", "질병관리청", "질량보존의법칙", "질드레", "질식사", "질풍노도", "질러꾼"},
+    ["장"] = {"장기밀매", "장미과", "장독대", "장대비", "장갑차", "장기판", "장애인", "장마철", "장수풍뎅이", "장작더미", "장사꾼", "장님"},
+    ["정"] = {"정비꾼", "정지궤도", "정육면체", "정류장", "정사면체", "정전기", "정밀측정", "정신과의사", "정글모", "정형외과", "정보통신", "정정당당"},
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-*.def
-*.exp
+    ["성"] = {"성냥갑", "성문", "성벽", "성상질량", "성인병", "성조기", "성형외과", "성형수술", "성분검사", "성곽꾼"},
+    ["원"] = {"원소기호", "원격탐사", "원심분리기", "원자로", "원뿔", "원기둥", "원자폭탄", "원예가", "원격제어"},
+    ["인"] = {"인슐린", "인공위성", "인푸루엔자", "인조잔디", "인프라", "인플루엔자", "인두염", "인디언", "인형탈"},
+    ["액"] = {"액정화면", "액화수소", "액체질소", "액면가", "액셀러레이터", "액정표시장치"},
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+    ["트"] = {"트리튬", "트립토판", "트랙터", "트라이앵글", "트로피", "트럼펫", "트랜지스터", "트레일러", "트리니트로톨루엔"},
+    ["더"] = {"더치페이", "더블베이스", "더듬이", "더그아웃", "더마타이트", "더위먹다"},
+    ["산"] = {"산기슭", "산바람", "산림", "산토끼", "산적꾼", "산성비", "산화칼슘", "산화나트륨", "산소마스크"},
+    ["책"] = {"책갈피", "책상", "책꽂이", "책벌레", "책가방", "책임자"},
+    ["임"] = {"임플란트", "임차꾼", "임상심리학", "임마누엘", "임금", "임시방편", "임계경로"},
+    ["물"] = {"물수제비", "물레방아", "물장수", "물안개", "물리학자", "물리법칙", "물구나무"},
+    ["셈"] = {"셈여림", "셈법", "셈틀", "셈판"},
+    ["도"] = {"도롱뇽", "도매꾼", "도깨비", "도르래", "도화선", "도자기", "도쿄돔", "도미노"},
+    ["심"] = {"심술꾼", "심부름", "심리학자", "심혈관", "심전도", "심해어", "심장마비"},
+    ["술"] = {"술꾼", "술래잡기", "술버릇", "술도가", "술래", "술잔"},
+    ["두"] = {"두름", "두껍쥐", "두꺼비", "두드러기", "두루미", "두부장수"},
+    ["소"] = {"소켓", "소방꾼", "소금", "소시지", "소쩍새", "소화기", "소소", "소프트웨어"},
+    ["수"] = {"수렵꾼", "수은", "수소", "수소이온", "수제비", "수탉", "수족관", "수채화", "수호천사"},
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+    ["름"] = {"름전", "름름", "름황", "름상스럽다", "름본", "름장"},
+    ["녘"] = {"녘새발", "녘노을"},
+    ["늄"] = {"늄바리", "늄장", "늄창", "늄본"},
+    ["윰"] = {"윰차", "윰키밀", "윰라대왕"},
+    ["섹"] = {"섹터", "섹션", "섹시", "섹스톤", "섹션별"},
+    ["석"] = {"석면", "석류나무", "석빙고", "석유화학", "석조전", "석유류"},
+    ["족"] = {"족저근막염", "족제비고사리", "족쇄", "족발", "족보", "족집게"},
+    ["식"] = {"식기세척기", "식염수", "식도염", "식물원", "식인종", "식탁보"},
+    ["고"] = {"고욤", "고드름", "고수레", "고무래", "고려청자", "고구마", "고릴라"},
+    ["쁨"] = {"쁨나무", "쁨새"}, 
+    ["절"] = {"절름발이", "절단기", "절댓값", "절대온도", "절지동물", "절경"},
+    ["실"] = {"실리콘", "실력꾼", "실린더", "실크로드", "실용신안권", "실내화"},
+    ["애"] = {"애니메이션", "애플리케이션", "애그플레이션", "애벌레", "애완동물"},
 
+    ["가"] = {"가돌리늄", "갈륨", "가마솥", "가슴팍", "가죽나루", "가위바위보", "가루비누", "가속기"},
+    ["나"] = {"나트륨", "나이오븀", "나프탈렌", "나이트로소기", "나사니트"},
+    ["다"] = {"다이아조늄", "다이크로뮴", "다비움", "다이질소", "다이옥신"},
+    ["라"] = {"라듐", "라돈", "루비듐", "라켓", "라우릴황산나트륨", "란타넘"},
+    ["마"] = {"마그네슘", "마이크로미터", "마켓", "마릇", "마이코플라스마"},
+    ["바"] = {"바나듐", "바륨", "버섯", "바가지", "바소프레신", "바이러스"},
+    ["사"] = {"사마륨", "사이클로트론", "사기꾼", "사산화오스뮴", "사프란"},
+    ["아"] = {"아메리슘", "알루미늄", "우라늄", "아스피린", "아인슈타이늄", "아르곤", "아스타틴"},
+    ["자"] = {"지르코늄", "자외선", "자전거", "자물쇠", "자연수", "자외선차단제"},
+    ["차"] = {"차아황산나트륨", "참기름", "차림새", "차축조", "차아염소산나트륨"},
+    ["카"] = {"카드뮴", "칼륨", "칼슘", "카메라", "카펫", "카보닐기", "카세트"},
+    ["타"] = {"타이타늄", "텔루륨", "탄산나트륨", "타르타르산나트륨", "탈륨"},
+    ["파"] = {"팔라듐", "플루토늄", "프로메튬", "파라핀", "파르메산치즈"},
+    ["하"] = {"하프늄", "헬륨", "홀뮴", "해질녘", "하이드라진", "핵분열"},
+    
+    ["기"] = {"기쁨", "기름", "기러기", "기뇰", "기상나팔", "기전력", "기둥"},
+    ["니"] = {"니켈", "니오븀", "니크롬", "니트로벤젠", "니켈카드뮴전지"},
+    ["리"] = {"리튬", "리놀륨", "리보솜", "리보핵산", "리놀렌산"},
+    ["비"] = {"비소", "비스무트", "비닐", "비스무트산나트륨", "비타민"},
+    ["시"] = {"시보귬", "시안화나트륨", "시클로헥산", "시너지", "시냅스"},
+    ["이"] = {"이리듐", "이테르븀", "이트륨", "이산화티타늄", "이온결합"},
+    ["지"] = {"지르코늄", "지름", "지질학", "지르콘", "지진계"},
+    ["티"] = {"티타늄", "티오황산나트륨", "티오펜", "티록신"},
+    ["피"] = {"피리딘", "피치블렌드", "피브리노젠", "피크린산"},
+    ["히"] = {"히알루론산나트륨", "히드라진", "히드로늄이온", "히스톤"},
+    ["무"] = {"무릎", "무당벌레", "무기질", "무연탄"},
+    ["루"] = {"루테늄", "루비듐", "루테튬", "루이스산"},
+    ["유"] = {"유로퓸", "유리창", "유비쿼터스", "유리섬유"},
+    ["크"] = {"크롬", "크립톤", "크로뮴", "크세논", "크산토필"},
+    ["프"] = {"프라세오디뮴", "프랑슘", "프레온가스", "프로판"},
+    ["플"] = {"플루토늄", "플루오린", "플라스틱", "플라즈마"},
+    ["에"] = {"에르븀", "에인슈타이늄", "에탄올", "에틸렌"},
+    ["오"] = {"오스뮴", "오가네손", "오존층", "오르가넬"},
+    
+    ["세"] = {"세륨", "세슘", "세로무늬근", "세라믹", "세균"},
+    ["베"] = {"베릴륨", "베이클라이트", "벤조산나트륨", "베이킹파우더"},
+    ["네"] = {"네오디뮴", "네온", "넵투늄", "네오프렌"},
+    ["테"] = {"테르븀", "테크네튬", "텔루륨", "테니스"},
+    ["페"] = {"페르뮴", "페놀", "페니실린", "페로몬"}
+}
+
+local UsedWords = {}
+
+-- GUI 생성
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "WordChainHack"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = CoreGui
+
+local MainFrame = Instance.new("Frame", screenGui)
+MainFrame.Size = UDim2.new(0, 320, 0, 275) -- 버튼 공간 위해 세로 크기 확장
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -135)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.BorderSizePixel = 0
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255, 0, 128)
+Instance.new("UIStroke", MainFrame).Thickness = 2
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+Title.Text = " ⚡ 끝말잇기 한방 핵 (키바인드 추가) ⚡"
+Title.TextColor3 = Color3.fromRGB(255, 0, 128)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 12
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
+
+-- 드래그 기능
+local dragging, dragInput, dragStart, startPos
+Title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true; dragStart = input.Position; startPos = MainFrame.Position
+    end
+end)
+Title.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+
+-- UI 요소들
+local InputBox = Instance.new("TextBox", MainFrame)
+InputBox.Size = UDim2.new(0, 120, 0, 40)
+InputBox.Position = UDim2.new(0, 20, 0, 48)
+InputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+InputBox.Text = ""
+InputBox.PlaceholderText = "끝글자 입력"
+InputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+InputBox.Font = Enum.Font.GothamBold
+InputBox.TextSize = 18
+Instance.new("UICorner", InputBox).CornerRadius = UDim.new(0, 6)
+
+local ResultLabel = Instance.new("TextLabel", MainFrame)
+ResultLabel.Size = UDim2.new(0, 280, 0, 38)
+ResultLabel.Position = UDim2.new(0, 20, 0, 95)
+ResultLabel.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+ResultLabel.Text = "글자를 치고 검색하세요."
+ResultLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+ResultLabel.Font = Enum.Font.GothamBold
+ResultLabel.TextSize = 15
+Instance.new("UICorner", ResultLabel).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", ResultLabel).Color = Color3.fromRGB(100, 100, 100)
+
+local SearchBtn = Instance.new("TextButton", MainFrame)
+SearchBtn.Size = UDim2.new(0, 140, 0, 40)
+SearchBtn.Position = UDim2.new(0, 160, 0, 48)
+SearchBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+SearchBtn.Text = "🔍 자동 검색"
+SearchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBtn.Font = Enum.Font.GothamBold
+SearchBtn.TextSize = 16
+Instance.new("UICorner", SearchBtn).CornerRadius = UDim.new(0, 6)
+
+local ChatBtn = Instance.new("TextButton", MainFrame)
+ChatBtn.Size = UDim2.new(0, 280, 0, 38)
+ChatBtn.Position = UDim2.new(0, 20, 0, 140)
+ChatBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+ChatBtn.Text = "💬 채팅에 자동 전송"
+ChatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ChatBtn.Font = Enum.Font.GothamBold
+ChatBtn.TextSize = 16
+Instance.new("UICorner", ChatBtn).CornerRadius = UDim.new(0, 6)
+
+local ResetBtn = Instance.new("TextButton", MainFrame)
+ResetBtn.Size = UDim2.new(0, 280, 0, 32)
+ResetBtn.Position = UDim2.new(0, 20, 0, 185)
+ResetBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+ResetBtn.Text = "🔄 단어 사용 기록 초기화 (새 게임)"
+ResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ResetBtn.Font = Enum.Font.GothamBold
+ResetBtn.TextSize = 13
+Instance.new("UICorner", ResetBtn).CornerRadius = UDim.new(0, 6)
+
+-- ★ 키바인드 설정 버튼 추가
+local KeybindBtn = Instance.new("TextButton", MainFrame)
+KeybindBtn.Size = UDim2.new(0, 280, 0, 32)
+KeybindBtn.Position = UDim2.new(0, 20, 0, 225)
+KeybindBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
+KeybindBtn.Text = "⌨️ UI 토글 키 설정: [RightShift]"
+KeybindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeybindBtn.Font = Enum.Font.GothamBold
+KeybindBtn.TextSize = 13
+Instance.new("UICorner", KeybindBtn).CornerRadius = UDim.new(0, 6)
+
+local CurrentWord = ""
+local ToggleKey = Enum.KeyCode.RightShift
+local isListeningForKey = false
+
+-- 단어 검색 함수
+SearchBtn.MouseButton1Click:Connect(function()
+    local char = InputBox.Text
+    if char == "" or string.len(char) < 1 then
+        ResultLabel.Text = "❌ 글자를 입력하세요!"
+        ResultLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+        return
+    end
+
+    local searchChar = char
+    if char == "녀" then searchChar = "여"
+    elseif char == "뇨" then searchChar = "요"
+    elseif char == "뉴" then searchChar = "유"
+    elseif char == "니" then searchChar = "이"
+    elseif char == "랴" then searchChar = "야"
+    elseif char == "려" then searchChar = "여"
+    elseif char == "료" then searchChar = "요"
+    elseif char == "류" then searchChar = "유"
+    elseif char == "리" then searchChar = "이"
+    elseif char == "라" then searchChar = "나"
+    elseif char == "로" then searchChar = "노"
+    elseif char == "뮴" then searchChar = "늄" 
+    end
+
+    local wordList = OneShotDict[searchChar] or OneShotDict[char]
+    
+    if wordList then
+        local availableWords = {}
+        for _, word in ipairs(wordList) do
+            if not UsedWords[word] then
+                table.insert(availableWords, word)
+            end
+        end
+        
+        if #availableWords > 0 then
+            CurrentWord = availableWords[math.random(1, #availableWords)]
+            ResultLabel.Text = "🔥 발견: " .. CurrentWord
+            ResultLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+        else
+            ResultLabel.Text = "⚠️ DB에 남은 단어가 없습니다!"
+            ResultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            CurrentWord = ""
+        end
+    else
+        ResultLabel.Text = "⚠️ DB에 없음! (일반 단어 쓰세요)"
+        ResultLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+        CurrentWord = ""
+    end
+end)
+
+-- 채팅 전송
+local function SendChat(text)
+    if text == "" then return end
+    if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+        local channel = TextChatService.TextChannels.RBXGeneral
+        if channel then channel:SendAsync(text) end
+    else
+        ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(text, "All")
+    end
+end
+
+ChatBtn.MouseButton1Click:Connect(function()
+    if CurrentWord ~= "" then
+        SendChat(CurrentWord)
+        UsedWords[CurrentWord] = true
+        ResultLabel.Text = "✅ 전송 완료 (기록됨): " .. CurrentWord
+        ResultLabel.TextColor3 = Color3.fromRGB(0, 255, 128)
+        CurrentWord = ""
+    else
+        ResultLabel.Text = "❌ 먼저 검색을 눌러주세요!"
+        ResultLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+    end
+end)
+
+-- 기록 초기화 함수
+ResetBtn.MouseButton1Click:Connect(function()
+    UsedWords = {} 
+    ResultLabel.Text = "🔄 사용 기록이 초기화되었습니다!"
+    ResultLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+end)
+
+-- ★ 키바인드 변경 모드 진입
+KeybindBtn.MouseButton1Click:Connect(function()
+    isListeningForKey = true
+    KeybindBtn.Text = "⌨️ 변경할 키를 누르세요..."
+    KeybindBtn.TextColor3 = Color3.fromRGB(255, 255, 0)
+end)
+
+-- ★ 키 입력 감지 (UI 토글 및 키바인드 변경 처리)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if isListeningForKey then
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            ToggleKey = input.KeyCode
+            isListeningForKey = false
+            KeybindBtn.Text = "⌨️ UI 토글 키 설정: [" .. tostring(ToggleKey.Name) .. "]"
+            KeybindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end
+    else
+        if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+            if input.KeyCode == ToggleKey then
+                MainFrame.Visible = not MainFrame.Visible -- UI 켜기 /끄기 전환
+            end
+        end
+    end
+end)
