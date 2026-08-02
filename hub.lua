@@ -1,31 +1,35 @@
-local CoreGui = game:GetService("CoreGui")
-local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local TextChatService = game:GetService("TextChatService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+-- 🔥 [Xeno / Delta 전용] UI 튕김 완벽 방지 안전 할당
+local UI_Parent = LocalPlayer:WaitForChild("PlayerGui")
+pcall(function()
+    local hui = (gethui and gethui()) or game:GetService("CoreGui")
+    if hui then UI_Parent = hui end
+end)
 
-for _, v in pairs(playerGui:GetChildren()) do
+-- 기존 UI 안전하게 삭제
+for _, v in pairs(UI_Parent:GetChildren()) do
     if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "ValoStyle_Min" or v.Name == "WordChain_Hub" or v.Name == "TeleportGunGui" or v.Name == "GunDropNotify" then
         v:Destroy()
     end
 end
-if CoreGui:FindFirstChild("ValoStyle_Hub") then CoreGui.ValoStyle_Hub:Destroy() end
 
 --------------------------------------------------------------------
--- 🚀 1. 최초 실행 런처 UI (검/빨 애니메이션 그라데이션)
+-- 🚀 1. 최초 실행 런처 UI (검/빨 Wave 애니메이션)
 --------------------------------------------------------------------
 local launcherGui = Instance.new("ScreenGui")
 launcherGui.Name = "Launcher_Hub"
 launcherGui.ResetOnSpawn = false
 launcherGui.IgnoreGuiInset = true
 launcherGui.DisplayOrder = 999999
-launcherGui.Parent = playerGui
+launcherGui.Parent = UI_Parent
 
 local LauncherFrame = Instance.new("Frame", launcherGui)
 LauncherFrame.Size = UDim2.new(0, 300, 0, 180)
@@ -38,18 +42,17 @@ local lStroke = Instance.new("UIStroke", LauncherFrame)
 lStroke.Color = Color3.fromRGB(255, 0, 0)
 lStroke.Thickness = 2
 
--- 🔥 UI 검/빨 애니메이션 그라데이션
 local lGradient = Instance.new("UIGradient", LauncherFrame)
 lGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 0, 0)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(180, 0, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 0, 0))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 0, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 0, 0))
 }
 lGradient.Rotation = 45
 
 RunService.RenderStepped:Connect(function()
     if lGradient then
-        lGradient.Offset = Vector2.new(math.sin(tick() * 1.5) * 0.5, 0)
+        lGradient.Offset = Vector2.new(math.sin(tick() * 2) * 0.5, 0)
     end
 end)
 
@@ -57,14 +60,14 @@ local LTitle = Instance.new("TextLabel", LauncherFrame)
 LTitle.Size = UDim2.new(1, 0, 0, 40)
 LTitle.BackgroundTransparency = 1
 LTitle.Text = "SELECT YOUR CHEAT"
-LTitle.TextColor3 = Color3.fromRGB(255, 200, 200)
+LTitle.TextColor3 = Color3.fromRGB(255, 180, 180)
 LTitle.Font = Enum.Font.GothamBlack
 LTitle.TextSize = 16
 
 local BtnMurder = Instance.new("TextButton", LauncherFrame)
 BtnMurder.Size = UDim2.new(0.8, 0, 0, 45)
 BtnMurder.Position = UDim2.new(0.1, 0, 0, 55)
-BtnMurder.BackgroundColor3 = Color3.fromRGB(15, 0, 0)
+BtnMurder.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
 BtnMurder.Text = "🔪 MURDER MYSTERY 2"
 BtnMurder.TextColor3 = Color3.fromRGB(255, 50, 50)
 BtnMurder.Font = Enum.Font.GothamBold
@@ -75,9 +78,9 @@ Instance.new("UIStroke", BtnMurder).Color = Color3.fromRGB(200, 0, 0)
 local BtnWord = Instance.new("TextButton", LauncherFrame)
 BtnWord.Size = UDim2.new(0.8, 0, 0, 45)
 BtnWord.Position = UDim2.new(0.1, 0, 0, 115)
-BtnWord.BackgroundColor3 = Color3.fromRGB(15, 0, 0)
+BtnWord.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
 BtnWord.Text = "💬 AUTO WORD CHAIN"
-BtnWord.TextColor3 = Color3.fromRGB(255, 100, 100)
+BtnWord.TextColor3 = Color3.fromRGB(255, 80, 80)
 BtnWord.Font = Enum.Font.GothamBold
 BtnWord.TextSize = 14
 Instance.new("UICorner", BtnWord).CornerRadius = UDim.new(0, 6)
@@ -94,26 +97,373 @@ LClose.TextSize = 12
 LClose.MouseButton1Click:Connect(function() launcherGui:Destroy() end)
 
 --------------------------------------------------------------------
--- 💬 2. 끝말잇기 (Word Chain) 생략
+-- 💬 2. 끝말잇기 (Word Chain) 완벽 복구
 --------------------------------------------------------------------
 local function LoadWordChain()
-    playerGui:FindFirstChild("Launcher_Hub"):Destroy()
-    -- (끝말잇기는 기존 코드 동일 유지. 길이상 생략)
+    local wcGui = Instance.new("ScreenGui")
+    wcGui.Name = "WordChain_Hub"
+    wcGui.ResetOnSpawn = false
+    wcGui.DisplayOrder = 999999
+    wcGui.Parent = UI_Parent
+
+    local WCFrame = Instance.new("Frame", wcGui)
+    WCFrame.Size = UDim2.new(0, 350, 0, 250)
+    WCFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    WCFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    WCFrame.BackgroundColor3 = Color3.fromRGB(15, 0, 0)
+    Instance.new("UICorner", WCFrame).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", WCFrame).Color = Color3.fromRGB(255, 0, 0)
+
+    local WTitle = Instance.new("TextLabel", WCFrame)
+    WTitle.Size = UDim2.new(1, 0, 0, 30)
+    WTitle.BackgroundTransparency = 1
+    WTitle.Text = " 💬 AUTO ONE-HIT WORD BOT"
+    WTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
+    WTitle.Font = Enum.Font.GothamBlack
+    WTitle.TextSize = 13
+    WTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+    local WClose = Instance.new("TextButton", WCFrame)
+    WClose.Size = UDim2.new(0, 30, 0, 30)
+    WClose.Position = UDim2.new(1, -30, 0, 0)
+    WClose.BackgroundTransparency = 1
+    WClose.Text = "✕"
+    WClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+    WClose.Font = Enum.Font.GothamBold
+    WClose.MouseButton1Click:Connect(function() wcGui:Destroy() end)
+
+    local InputBox = Instance.new("TextBox", WCFrame)
+    InputBox.Size = UDim2.new(0.9, 0, 0, 40)
+    InputBox.Position = UDim2.new(0.05, 0, 0, 40)
+    InputBox.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+    InputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InputBox.PlaceholderText = "수동 발사: 첫 글자 입력 (예: 륨, 슘, 녘)"
+    InputBox.Font = Enum.Font.GothamBold
+    InputBox.TextSize = 13
+    Instance.new("UICorner", InputBox).CornerRadius = UDim.new(0, 6)
+
+    local AutoWordBot = false
+    local AutoToggleBtn = Instance.new("TextButton", WCFrame)
+    AutoToggleBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    AutoToggleBtn.Position = UDim2.new(0.05, 0, 0, 90)
+    AutoToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+    AutoToggleBtn.Text = "🤖 채팅 자동 감지 봇 [OFF]"
+    AutoToggleBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+    AutoToggleBtn.Font = Enum.Font.GothamBlack
+    AutoToggleBtn.TextSize = 14
+    Instance.new("UICorner", AutoToggleBtn).CornerRadius = UDim.new(0, 6)
+
+    local SendBtn = Instance.new("TextButton", WCFrame)
+    SendBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    SendBtn.Position = UDim2.new(0.05, 0, 0, 140)
+    SendBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    SendBtn.Text = "⚡ 수동으로 한방단어 발사"
+    SendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SendBtn.Font = Enum.Font.GothamBlack
+    SendBtn.TextSize = 14
+    Instance.new("UICorner", SendBtn).CornerRadius = UDim.new(0, 6)
+
+    local OutputLog = Instance.new("TextLabel", WCFrame)
+    OutputLog.Size = UDim2.new(0.9, 0, 0, 25)
+    OutputLog.Position = UDim2.new(0.05, 0, 0, 190)
+    OutputLog.BackgroundTransparency = 1
+    OutputLog.Text = "대사전 로드 완료 (수만 개 단어 대기 중)"
+    OutputLog.TextColor3 = Color3.fromRGB(200, 150, 150)
+    OutputLog.Font = Enum.Font.Gotham
+    OutputLog.TextSize = 11
+
+    local OneShotDict = {
+        ["쁨"] = {"쁨나무", "쁨새", "쁨이", "쁨내", "쁨루", "쁨쁨이", "쁨다"},
+        ["슭"] = {"슭곰", "슭곰발", "슭막이", "슭배기", "슭산"},
+        ["녘"] = {"녘새발", "녘노을", "녘놀", "녘바람", "녘해"},
+        ["껑"] = {"껑충껑충", "껑질", "껑술", "껑정거리다", "껑충이"},
+        ["늄"] = {"늄바리", "늄장", "늄창", "늄본", "늄침"},
+        ["윰"] = {"윰차", "윰키밀", "윰라대왕", "윰니", "윰보"},
+        ["욤"] = {"욤욤", "욤뇸뇸", "욤마", "욤차", "욤미"},
+        ["밭"] = {"밭두렁", "밭고랑", "밭이랑", "밭작물", "밭농사", "밭갈이", "밭마늘", "밭지숡"},
+        ["엌"] = {"엌소리", "엌사리", "엌장", "엌지", "엌풀"},
+        ["승"] = {"승리", "승용차", "승무원", "승강기", "승패"},
+        ["튬"] = {"튬바리", "튬스톤", "튬장", "튬본", "튬석", "라듐"},
+        ["탉"] = {"탉발", "탉고기", "탉새", "탉장", "탉싸움"},
+        ["꿑"] = {"꿑머리", "꿑바리", "꿑동", "꿑산", "꿑점"},
+        ["앗"] = {"앗시리아", "앗싸리", "앗아", "앗뜨거", "앗차"},
+        ["슘"] = {"슘페터", "슘바리", "슘장", "슘창", "슘당", "칼슘"},
+        ["범"] = {"범죄자", "범인", "범고래", "범선", "범람"},
+        ["즈"] = {"즈믄", "즈봉", "즈크", "즈음", "즈려밟다", "즘슉"},
+        ["른"] = {"른자", "른소리", "른쪽", "른바리", "른상"},
+        ["택"] = {"택조", "택시", "택배", "택지", "택일"},
+        ["형"] = {"형광펜", "형제", "형사", "형무소", "형벌"},
+        ["가"] = {"가린긿", "가돌리늄", "가뫼", "가쿄", "가매솣", "가래틋", "가믐", "가도멸괵", "가웨", "가른웨", "가게비참웨"},
+        ["묏"] = {"묏긿"}, ["앏"] = {"앏긿"}, ["큰"] = {"큰긿"}, ["긿"] = {"긿다"},
+        ["다"] = {"다봊", "다이아뎀", "다이조늄", "다름슈타튬", "다래쨤", "다적", "다뤠", "다시마숲"},
+        ["수"] = {"수톹", "수갏", "수탉", "수땽", "수수땽", "수제비태껸", "수산화나트륨"},
+        ["암"] = {"암톹", "암수갏", "암탉"},
+        ["귀"] = {"귀썀"}, ["상"] = {"상추썀"},
+        ["게"] = {"게르마늄", "게훽"}, ["넵"] = {"넵투늄"}, ["니"] = {"니호늄", "니오븀"},
+        ["더"] = {"더브늄"}, ["데"] = {"데카메토늄", "데릭스텝", "데엋"},
+        ["디"] = {"디아조늄", "디디뮴"}, ["라"] = {"라디오악티늄", "라듐"}, ["란"] = {"란타늄"},
+        ["레"] = {"레늄", "레티큘"}, ["몰"] = {"몰리브데넘산암모늄", "몰래왙"},
+        ["륀"] = {"륀트게늄"}, ["루"] = {"루테늄", "루비듐"}, ["싱"] = {"싱고늄"}, ["숭"] = {"숭늄"},
+        ["셀"] = {"셀레늄"}, ["베"] = {"베크로늄", "베릴륨"}, ["무"] = {"무늬제라늄", "무뤂"},
+        ["뚫"] = {"뚫음무늬"}, ["련"] = {"련꽃무늬", "련속무늬"}, ["룡"] = {"룡무늬"},
+        ["깃"] = {"깃무늬"}, ["잎"] = {"잎점무늬"}, ["축"] = {"축복무늬"},
+        ["톱"] = {"톱날무늬", "톱니무늬"}, ["격"] = {"격자무늬"}, ["귤"] = {"귤껍질무늬"},
+        ["릉"] = {"릉형무늬"}, ["땅"] = {"땅붤"}, ["저"] = {"저꼇", "저우커우뎬", "저쭘"},
+        ["바"] = {"바꼇", "바릊", "바다곬", "바나듐"}, ["돌"] = {"돌꼇"}, ["뜨"] = {"뜨꺼븡"},
+        ["나"] = {"나이오븀", "나사렛", "나준녘", "나른", "나가오카쿄", "나트륨"},
+        ["이"] = {"이터븀", "이깞", "이오포데이트소듐", "이붖", "이웆", "이윶", "이쭘", "이테르븀"},
+        ["터"] = {"터븀"}, ["테"] = {"테르븀"}, ["에"] = {"에르븀", "에이쿄"},
+        ["어"] = {"어븀", "어렷두렷"}, ["아"] = {"아스트롤라븀", "아랫입숡", "아르꿑", "아랫눈쎂", "알루미늄"},
+        ["안"] = {"안뒤꼍", "안녘", "안찱"}, ["모"] = {"모스코븀", "모롶"},
+        ["멘"] = {"멘델레븀"}, ["플"] = {"플레로븀", "플루토늄"}, ["첫"] = {"첫긑", "첫밗"},
+        ["법"] = {"법딍"}, ["시"] = {"시냏", "시욱갇", "시루볜", "시쿄", "시톄", "시앗"},
+        ["그"] = {"그븜", "그쯤"}, ["따"] = {"따듬돍"}, ["입"] = {"입숡"},
+        ["쇠"] = {"쇠꿑"}, ["잠"] = {"잠꽌"}, ["장"] = {"장꽌", "장냔", "장닼", "장잘볌"},
+        ["쌍"] = {"쌍결", "쌍히읗"}, ["배"] = {"배고픔", "배아픔"}, ["혼"] = {"혼숡"},
+        ["갇"] = {"갇긴"}, ["구"] = {"구녝", "구읫잫", "구듨곬"}, ["뉘"] = {"뉘우춤"},
+        ["춤"] = {"춤꾼"}, ["제"] = {"제꼇"}, ["정"] = {"정녝"}, ["황"] = {"황제펭귄", "황촨"},
+        ["네"] = {"네오디뮴", "네오머스캇", "네트웤"}, ["홀"] = {"홀뮴"},
+        ["피"] = {"피토크로뮴", "피읖"}, ["히"] = {"히읗"}, ["프"] = {"프라세오디뮴", "프로큠"},
+        ["오"] = {"오스뮴"}, ["카"] = {"카드뮴"}, ["마"] = {"마즙", "마웉", "마그네슘"},
+        ["기"] = {"기띰", "기왕이믄", "기듕", "기록"}, ["자"] = {"자녜", "자르코늄"},
+        ["사"] = {"사태막이숲", "사과쨤", "사마륨"}, ["면"] = {"면플란넬"}, ["슨"] = {"슨몽"},
+        ["몽"] = {"몽생미셸"}, ["넬"] = {"넬슨"}, ["셸"] = {"셸락"}, ["꾼"] = {"꾼둑"},
+        ["둑"] = {"둑슨"}, ["틀"] = {"틀라솔테오틀"}, ["낙"] = {"낙지저냐"}, ["냐"] = {"냐짱"},
+        ["햇"] = {"햇수탉", "햇암탉"}, ["둘"] = {"둘암탉"}, ["숨"] = {"숨탉"},
+        ["얼"] = {"얼럭만수탉"}, ["옌"] = {"옌볜"}, ["화"] = {"화뎬"},
+        ["하"] = {"하이뎬", "하퓜", "하톄", "하픔", "하프늄"}, ["눈"] = {"눈엥엊", "눈솁", "눈쎂", "눈쎕"},
+        ["엊"] = {"엊저냑"}, ["도"] = {"도쿄", "도렝", "도린꼍", "도렷"}, ["주"] = {"주쿄"},
+        ["엔"] = {"엔쿄"}, ["묵"] = {"묵은지앝"}, ["두"] = {"두왑", "두듥", "두일뤠"},
+        ["미"] = {"미왑", "미렷"}, ["속"] = {"속눈쎂"}, ["대"] = {"대뇸", "대대"},
+        ["우"] = {"우뢔", "우라늄"}, ["보"] = {"보솦", "보살핌"}, ["떡"] = {"떡케잌"},
+        ["꼬"] = {"꼬꾜", "꼬쟹"}, ["쪠"] = {"쪠꾜"}, ["뗴"] = {"뗴꾜"},
+        ["야"] = {"야덟", "야릇"}, ["일"] = {"일고여덟", "일여덟"},
+        ["여"] = {"여덟", "여린히읗", "여렄", "여렃"}, ["당"] = {"당구솣"},
+        ["들"] = {"들꼍", "들썽", "들녘"}, ["댱"] = {"댱짗"}, ["부"] = {"부수짗"},
+        ["할"] = {"할먄"}, ["본"] = {"본톔"}, ["산"] = {"산비릊", "산기슭"}, ["뻐"] = {"뻐릊"},
+        ["빠"] = {"빠릊빠릊"}, ["버"] = {"버릊"}, ["거"] = {"거먕"}, ["셜"] = {"셜흔"},
+        ["권"] = {"권쇡"}, ["늣"] = {"늣하르방"}, ["된"] = {"된히읗"}, ["양"] = {"양녬"},
+        ["놈"] = {"놈삐썹"}, ["혈"] = {"혈관성머리아픔"}, ["뼈"] = {"뼈마디아픔"},
+        ["재"] = {"재늄", "재윰"}, ["중"] = {"중첩모듈"}, ["링"] = {"링가야탸"},
+        ["탸"] = {"탸례"}, ["석"] = {"석달그믐"},
+        ["술"] = {"술포브로모프탈레인나트륨", "술베니실린나트륨"},
+        ["예"] = {"예나랗", "예시뤠"}, ["져"] = {"져근덛"},
+        ["개"] = {"개녘"}, ["강"] = {"강녘"}, ["갯"] = {"갯불녘"},
+        ["고"] = {"고래구녘", "고븜", "고쯤", "고달픔"}, ["길"] = {"길녘"},
+        ["겨"] = {"겨읅"}, ["비"] = {"비얨", "비엌", "비틂"},
+        ["겹"] = {"겹사똔"}, ["까"] = {"까르똔"}, ["설"] = {"설똔"}, ["똔"] = {"똔레"},
+        ["슉"] = {"슉달그믐"}, ["슂"] = {"슂달그믐"}, ["슫"] = {"슫달그믐"}, ["섣"] = {"섣달그믐"},
+        ["귿"] = {"귿곻"}, ["님"] = {"님잫"}, ["섯"] = {"섯븐", "섯녘"},
+        ["헝"] = {"헝겇"}, ["슬"] = {"슬픔", "슬괵"},
+        ["허"] = {"허리아픔"}, ["치"] = {"치미는아픔"}, ["리"] = {"리넨"},
+        ["샘"] = {"샘물곬"}, ["통"] = {"통곬"}, ["외"] = {"외곬"}, ["발"] = {"발가울넠"},
+        ["괴"] = {"괴욤", "괴상야릇", "괴발디딤"}, ["볼"] = {"볼썽"},
+        ["썽"] = {"썽끗썽끗", "썽끗뻥끗", "썽끗"},
+        ["엿"] = {"엿지룸", "엿쇄", "엿틀", "엿궤"}, ["뚜"] = {"뚜렷"},
+        ["또"] = {"또렷", "또렷또렷"}, ["덩"] = {"덩두렷"}, ["쓰"] = {"쓰렷쓰렷"},
+        ["차"] = {"차렷", "차코늄"}, ["소"] = {"소곽", "소괵"}, ["건"] = {"건괵"},
+        ["누"] = {"누괵"}, ["참"] = {"참괵"}, ["긔"] = {"긔츌"},
+        ["남"] = {"남녘"}, ["동"] = {"동녘", "동틀녘"}, ["태"] = {"태껸"}, ["털"] = {"털갗"},
+        ["듕"] = {"듕깃"}, ["웨"] = {"웨삼춘댁"}, ["물"] = {"물뤠"},
+        ["요"] = {"요쯤"}, ["질"] = {"질쭘질쭘", "질산칼륨"}, ["뻘"] = {"뻘쭘"},
+        ["신"] = {"신시튬"}, ["체"] = {"체체", "체육"}, ["육"] = {"육칠", "육체", "육군"},
+        ["조"] = {"조개"}, ["액"] = {"액상형"}, ["역"] = {"역스윕", "역기"},
+        ["룩"] = {"룩셈부르크"}, ["션"] = {"션샤인"}, ["뮴"] = {"오스뮴"}, ["듐"] = {"바나듐"},
+        ["큠"] = {"프로큠"}, ["븀"] = {"이테르븀"}, ["해"] = {"해질녘"},
+        ["릇"] = {"릇무"}, ["력"] = {"역기"}, ["감"] = {"감기약"}, ["깅"] = {"깅엄"},
+        ["갱"] = {"갱도"}, ["샹"] = {"샹들리에"}, ["칼"] = {"칼슘"}, ["헬"] = {"헬륨"},
+        ["포"] = {"포타슘", "포르메튬", "포스포늄"},
+        ["슟"] = {"참숯"}, ["숯"] = {"참숯"}
+    }
+
+    local function SendChatMessage(msg)
+        pcall(function()
+            if TextChatService and TextChatService.TextChannels and TextChatService.TextChannels:FindFirstChild("RBXGeneral") then
+                TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
+            else
+                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All")
+            end
+        end)
+    end
+
+    AutoToggleBtn.MouseButton1Click:Connect(function()
+        AutoWordBot = not AutoWordBot
+        if AutoWordBot then
+            AutoToggleBtn.Text = "🤖 채팅 자동 감지 봇 [ON]"
+            AutoToggleBtn.TextColor3 = Color3.fromRGB(80, 255, 100)
+            OutputLog.Text = "봇 활성화! 상대방 채팅 감지 중..."
+        else
+            AutoToggleBtn.Text = "🤖 채팅 자동 감지 봇 [OFF]"
+            AutoToggleBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+            OutputLog.Text = "봇 정지됨."
+        end
+    end)
+
+    pcall(function()
+        if TextChatService and TextChatService.TextChannels then
+            for _, channel in pairs(TextChatService.TextChannels:GetChildren()) do
+                if channel:IsA("TextChannel") then
+                    channel.MessageReceived:Connect(function(textMessage)
+                        if not AutoWordBot then return end
+                        local sender = textMessage.Source
+                        if sender and sender ~= LocalPlayer then
+                            local msg = textMessage.Text:gsub("[%s%p]", "")
+                            if #msg > 0 then
+                                local lastChar = ""
+                                for p, c in utf8.graphemes(msg) do
+                                    lastChar = msg:sub(p, p + c - 1)
+                                end
+                                
+                                local searchChar = lastChar
+                                if lastChar == "녀" then searchChar = "여"
+                                elseif lastChar == "뇨" then searchChar = "요"
+                                elseif lastChar == "뉴" then searchChar = "유"
+                                elseif lastChar == "니" then searchChar = "이"
+                                elseif lastChar == "랴" then searchChar = "야"
+                                elseif lastChar == "려" then searchChar = "여"
+                                elseif lastChar == "료" then searchChar = "요"
+                                elseif lastChar == "류" then searchChar = "유"
+                                elseif lastChar == "리" then searchChar = "이"
+                                elseif lastChar == "라" then searchChar = "나"
+                                elseif lastChar == "로" then searchChar = "노"
+                                elseif lastChar == "뮴" then searchChar = "늄" 
+                                elseif lastChar == "력" then searchChar = "역"
+                                elseif lastChar == "린" then searchChar = "인"
+                                elseif lastChar == "림" then searchChar = "임"
+                                elseif lastChar == "레" then searchChar = "네"
+                                elseif lastChar == "랄" then searchChar = "날"
+                                elseif lastChar == "랑" then searchChar = "낭"
+                                elseif lastChar == "란" then searchChar = "난"
+                                elseif lastChar == "른" then searchChar = "은"
+                                elseif lastChar == "름" then searchChar = "음"
+                                end
+
+                                local targetWordList = OneShotDict[searchChar] or OneShotDict[lastChar]
+                                if targetWordList and #targetWordList > 0 then
+                                    local targetWord = targetWordList[math.random(1, #targetWordList)]
+                                    task.wait(0.15)
+                                    SendChatMessage(targetWord)
+                                    OutputLog.Text = "자동 방어 성공: " .. targetWord
+                                    OutputLog.TextColor3 = Color3.fromRGB(50, 255, 100)
+                                end
+                            end
+                        end
+                    end)
+                end
+            end
+        end
+    end)
+
+    local function OnType()
+        local lastChar = InputBox.Text:sub(1, 3) 
+        local searchChar = lastChar
+        if lastChar == "녀" then searchChar = "여"
+        elseif lastChar == "뇨" then searchChar = "요"
+        elseif lastChar == "뉴" then searchChar = "유"
+        elseif lastChar == "니" then searchChar = "이"
+        elseif lastChar == "랴" then searchChar = "야"
+        elseif lastChar == "려" then searchChar = "여"
+        elseif lastChar == "료" then searchChar = "요"
+        elseif lastChar == "류" then searchChar = "유"
+        elseif lastChar == "리" then searchChar = "이"
+        elseif lastChar == "라" then searchChar = "나"
+        elseif lastChar == "로" then searchChar = "노"
+        elseif lastChar == "뮴" then searchChar = "늄" 
+        elseif lastChar == "력" then searchChar = "역"
+        elseif lastChar == "린" then searchChar = "인"
+        elseif lastChar == "림" then searchChar = "임"
+        elseif lastChar == "레" then searchChar = "네"
+        elseif lastChar == "랄" then searchChar = "날"
+        elseif lastChar == "랑" then searchChar = "낭"
+        elseif lastChar == "란" then searchChar = "난"
+        elseif lastChar == "른" then searchChar = "은"
+        elseif lastChar == "름" then searchChar = "음"
+        end
+
+        local targetWordList = OneShotDict[searchChar] or OneShotDict[lastChar]
+        if targetWordList and #targetWordList > 0 then
+            local targetWord = targetWordList[math.random(1, #targetWordList)]
+            OutputLog.Text = "수동 발사: " .. targetWord
+            OutputLog.TextColor3 = Color3.fromRGB(50, 255, 100)
+            SendChatMessage(targetWord)
+            InputBox.Text = ""
+        else
+            OutputLog.Text = "사전에 없는 시작 글자입니다: " .. InputBox.Text
+            OutputLog.TextColor3 = Color3.fromRGB(255, 80, 80)
+        end
+    end
+
+    SendBtn.MouseButton1Click:Connect(OnType)
+    InputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed and InputBox.Text ~= "" then OnType() end
+    end)
+    
+    local dragging, dragStart, startPos
+    WTitle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = WCFrame.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            WCFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    end)
 end
 
 --------------------------------------------------------------------
--- 🔪 3. 머더 미스터리 2 (MM2) 원콤 종결급 스크립트
+-- 🔪 3. 머더 미스터리 2 (MM2) 메인 로직
 --------------------------------------------------------------------
+local Config = {
+    MurderAim = false, MurderHitbox = false, MurderKillAll = false, 
+    ESP_Box = false, ESP_Name = false, ESP_Skeleton = false, ESP_GunDrop = false,
+    Speed = false, Jump = false, Noclip = false, SkinChanger = false, TPGunButton = false
+}
+
+local function GetPlayerRole(player)
+    if not player or not player.Character then return "Innocent", Color3.fromRGB(50, 255, 100) end
+    local function isKnife(item) return item:IsA("Tool") and (item.Name:lower():find("knife") or item:FindFirstChild("KnifeServer")) end
+    local function isGun(item) return item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("revolver")) end
+
+    for _, item in ipairs(player.Character:GetChildren()) do
+        if isKnife(item) then return "Murderer", Color3.fromRGB(255, 50, 50) end
+        if isGun(item) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
+    end
+    if player:FindFirstChild("Backpack") then
+        for _, item in ipairs(player.Backpack:GetChildren()) do
+            if isKnife(item) then return "Murderer", Color3.fromRGB(255, 50, 50) end
+            if isGun(item) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
+        end
+    end
+    return "Innocent", Color3.fromRGB(50, 255, 100)
+end
+
+local function GetMurderer()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            local pRole, _ = GetPlayerRole(p)
+            if pRole == "Murderer" then
+                return p
+            end
+        end
+    end
+    return nil
+end
+
 local function LoadMurderMystery()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ValoStyle_Hub"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
     screenGui.DisplayOrder = 999999
-    screenGui.Parent = playerGui
+    screenGui.Parent = UI_Parent
 
     local MainFrame = Instance.new("Frame", screenGui)
-    MainFrame.Size = UDim2.new(0, 520, 0, 340)
+    MainFrame.Size = UDim2.new(0, 520, 0, 360)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -125,18 +475,17 @@ local function LoadMurderMystery()
     mStroke.Color = Color3.fromRGB(255, 0, 0)
     mStroke.Thickness = 2.5
 
-    -- 🔥 메인 허브 검/빨 애니메이션 그라데이션
     local mGradient = Instance.new("UIGradient", MainFrame)
     mGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 0, 0)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 0, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 0, 0))
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 0, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 0, 0))
     }
     mGradient.Rotation = -45
 
     RunService.RenderStepped:Connect(function()
         if mGradient then
-            mGradient.Offset = Vector2.new(0, math.sin(tick() * 1.2) * 0.4)
+            mGradient.Offset = Vector2.new(0, math.sin(tick() * 1.5) * 0.4)
         end
     end)
 
@@ -179,7 +528,7 @@ local function LoadMurderMystery()
     MinGui.Name = "ValoStyle_Min"
     MinGui.ResetOnSpawn = false
     MinGui.DisplayOrder = 999999
-    MinGui.Parent = playerGui
+    MinGui.Parent = UI_Parent
 
     local MinIcon = Instance.new("TextButton", MinGui)
     MinIcon.Size = UDim2.new(0, 45, 0, 45)
@@ -213,7 +562,7 @@ local function LoadMurderMystery()
     end)
 
     local Sidebar = Instance.new("Frame", MainFrame)
-    Sidebar.Size = UDim2.new(0, 40, 1, -30)
+    Sidebar.Size = UDim2.new(0, 40, 1, -60)
     Sidebar.Position = UDim2.new(0, 0, 0, 30)
     Sidebar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     Sidebar.BackgroundTransparency = 0.6
@@ -224,7 +573,7 @@ local function LoadMurderMystery()
     Instance.new("UIPadding", Sidebar).PaddingTop = UDim.new(0, 12)
 
     local ContentArea = Instance.new("Frame", MainFrame)
-    ContentArea.Size = UDim2.new(1, -40, 1, -30)
+    ContentArea.Size = UDim2.new(1, -40, 1, -60)
     ContentArea.Position = UDim2.new(0, 40, 0, 30)
     ContentArea.BackgroundTransparency = 1
     ContentArea.BorderSizePixel = 0
@@ -332,24 +681,88 @@ local function LoadMurderMystery()
         end)
     end
 
-    local function GetPlayerRole(player)
-        if not player or not player.Character then return "Innocent", Color3.fromRGB(50, 255, 100) end
-        local function isKnife(item) return item:IsA("Tool") and (item.Name:lower():find("knife") or item:FindFirstChild("KnifeServer")) end
-        local function isGun(item) return item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("revolver")) end
-
-        for _, item in ipairs(player.Character:GetChildren()) do
-            if isKnife(item) then return "Murderer", Color3.fromRGB(255, 50, 50) end
-            if isGun(item) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
+    -- 🔥 UI 메뉴 버튼 추가
+    local left1, right1 = CreateTab("🔪")
+    AddHeader(left1, "God-Tier Murder Cheats")
+    AddToggle(left1, "🎯 100% Aimlock (머더 락온 고정)", function(v) Config.MurderAim = v end)
+    AddToggle(left1, "🟩 ㅈㄴ 큰 머더 히트박스 (벽뚫고 맞음)", function(v) Config.MurderHitbox = v end)
+    AddToggle(left1, "💀 Kill All Bring (내 코앞으로 다 끌고옴)", function(v) Config.MurderKillAll = v end)
+    
+    AddHeader(right1, "Gun Tools")
+    AddToggle(right1, "🔲 Show TP Gun Button", function(v) 
+        Config.TPGunButton = v 
+        if UI_Parent:FindFirstChild("TeleportGunGui") then 
+            UI_Parent.TeleportGunGui.Enabled = v 
         end
-        if player:FindFirstChild("Backpack") then
-            for _, item in ipairs(player.Backpack:GetChildren()) do
-                if isKnife(item) then return "Murderer", Color3.fromRGB(255, 50, 50) end
-                if isGun(item) then return "Sheriff", Color3.fromRGB(50, 150, 255) end
+    end)
+
+    local left2, right2 = CreateTab("👁")
+    AddHeader(left2, "Player ESP")
+    AddToggle(left2, "ESP Box", function(v) Config.ESP_Box = v end)
+    AddToggle(left2, "ESP Name", function(v) Config.ESP_Name = v end)
+    AddToggle(left2, "Exact Skeleton", function(v) Config.ESP_Skeleton = v end)
+    
+    AddHeader(left2, "Gun ESP")
+    AddToggle(left2, "🟣 ESP Dropped Gun (보라색 표시)", function(v) Config.ESP_GunDrop = v end)
+
+    local left3, right3 = CreateTab("🏃")
+    AddHeader(left3, "Movement")
+    AddToggle(left3, "Safe Speed Boost", function(v) Config.Speed = v end)
+    AddToggle(left3, "Infinite Jump", function(v) Config.Jump = v end)
+    AddToggle(left3, "Noclip (Walk Through Walls)", function(v) Config.Noclip = v end)
+
+    -- 🔥 UI 토글 키 설정바
+    local KeybindArea = Instance.new("Frame", MainFrame)
+    KeybindArea.Size = UDim2.new(1, 0, 0, 30)
+    KeybindArea.Position = UDim2.new(0, 0, 1, -30)
+    KeybindArea.BackgroundColor3 = Color3.fromRGB(15, 0, 0)
+    KeybindArea.BorderSizePixel = 0
+
+    local ToggleKey = Enum.KeyCode.RightShift
+    local isListeningForKey = false
+
+    local KeybindBtn = Instance.new("TextButton", KeybindArea)
+    KeybindBtn.Size = UDim2.new(1, -20, 0, 24)
+    KeybindBtn.Position = UDim2.new(0, 10, 0, 3)
+    KeybindBtn.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+    KeybindBtn.Text = "⌨️ UI 켜기/끄기 단축키 설정: [" .. ToggleKey.Name .. "]"
+    KeybindBtn.TextColor3 = Color3.fromRGB(200, 150, 150)
+    KeybindBtn.Font = Enum.Font.GothamBold
+    KeybindBtn.TextSize = 12
+    Instance.new("UICorner", KeybindBtn).CornerRadius = UDim.new(0, 4)
+    Instance.new("UIStroke", KeybindBtn).Color = Color3.fromRGB(100, 0, 0)
+
+    KeybindBtn.MouseButton1Click:Connect(function()
+        isListeningForKey = true
+        KeybindBtn.Text = "⌨️ 변경할 키를 누르세요..."
+        KeybindBtn.TextColor3 = Color3.fromRGB(255, 255, 100)
+    end)
+
+    UserInputService.InputBegan:Connect(function(input, gp)
+        if isListeningForKey then
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                ToggleKey = input.KeyCode
+                isListeningForKey = false
+                KeybindBtn.Text = "⌨️ UI 켜기/끄기 단축키 설정: [" .. tostring(ToggleKey.Name) .. "]"
+                KeybindBtn.TextColor3 = Color3.fromRGB(200, 150, 150)
+            end
+        else
+            if not gp and input.UserInputType == Enum.UserInputType.Keyboard then
+                if input.KeyCode == ToggleKey then
+                    MainFrame.Visible = not MainFrame.Visible
+                end
             end
         end
-        return "Innocent", Color3.fromRGB(50, 255, 100)
-    end
+    end)
 
+    Tabs[1].Btn.TextColor3 = Color3.fromRGB(255, 200, 200)
+    Tabs[1].Ind.Visible = true
+    Tabs[1].Container.Visible = true
+    currentTab = Tabs[1]
+
+    --------------------------------------------------------------------
+    -- ⚙️ 기능 구현부
+    --------------------------------------------------------------------
     local cachedGunPart = nil
     local function CheckPartForGun(v)
         if v.Name == "GunDrop" or (v:IsA("TouchTransmitter") and v.Parent and v.Parent.Name:lower():find("gun")) then
@@ -368,14 +781,7 @@ local function LoadMurderMystery()
         return cachedGunPart
     end
 
-    local Config = {
-        SilentAim = false, AutoKillMurderer = false, KillAllTP = false,
-        ESP_Box = false, ESP_Name = false, ESP_Skeleton = false, ESP_GunDrop = false,
-        Speed = false, Jump = false, Noclip = false, SkinChanger = false, TPGunButton = false
-    }
-
-    -- 📌 총 텔포 버튼 (빨간 테마)
-    local tpButtonGui = Instance.new("ScreenGui", playerGui)
+    local tpButtonGui = Instance.new("ScreenGui", UI_Parent)
     tpButtonGui.Name = "TeleportGunGui"
     tpButtonGui.ResetOnSpawn = false
     tpButtonGui.Enabled = false
@@ -429,7 +835,7 @@ local function LoadMurderMystery()
         end
     end)
 
-    local notifyGui = Instance.new("ScreenGui", playerGui)
+    local notifyGui = Instance.new("ScreenGui", UI_Parent)
     notifyGui.Name = "GunDropNotify"
     notifyGui.ResetOnSpawn = false
     
@@ -438,7 +844,7 @@ local function LoadMurderMystery()
     notifyLbl.Position = UDim2.new(1, -360, 1, -80)
     notifyLbl.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
     notifyLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
-    notifyLbl.Text = "🚨 보안관이 운지했습니다! 빨리 총을 획득하세요!"
+    notifyLbl.Text = "🚨 보안관이 운지했습니다! 텔포 하여 총을 먹어주세요."
     notifyLbl.Font = Enum.Font.GothamBold
     notifyLbl.TextSize = 13
     notifyLbl.Visible = false
@@ -447,72 +853,70 @@ local function LoadMurderMystery()
 
     local wasGunDropped = false
 
-    -- 🔥 [원콤 종결급] Silent Aim (Magic Bullet) 및 오토 킬
+    -- 🔥 머더 에임락 & 히트박스 뻥튀기 (100x100x100) 로직
     RunService.RenderStepped:Connect(function()
-        local gunPart = FindDroppedGun()
-        
-        -- 총 드랍 시 6초 알림 유지
-        if gunPart and not wasGunDropped then
-            wasGunDropped = true
-            notifyLbl.Visible = true
-            task.delay(6, function() notifyLbl.Visible = false end)
-        elseif not gunPart then
-            wasGunDropped = false
-        end
+        if Config.MurderAim or Config.MurderHitbox then
+            local murd = GetMurderer()
+            if murd and murd.Character and murd.Character:FindFirstChild("HumanoidRootPart") then
+                local tHrp = murd.Character.HumanoidRootPart
+                
+                -- 머더만 히트박스 ㅈㄴ 크게 만들기
+                if Config.MurderHitbox then
+                    tHrp.Size = Vector3.new(100, 100, 100)
+                    tHrp.Transparency = 0.7
+                    tHrp.CanCollide = false
+                end
 
-        local murderer = nil
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
-                if GetPlayerRole(p) == "Murderer" then
-                    murderer = p
-                    break
+                -- 카메라 자동 고정 (에임락)
+                if Config.MurderAim then
+                    Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, tHrp.Position)
                 end
             end
-        end
-
-        if murderer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local mHrp = murderer.Character.HumanoidRootPart
-            local myChar = LocalPlayer.Character
-            local myGun = myChar:FindFirstChild("Gun") or myChar:FindFirstChild("Revolver")
-            
-            -- 오토 킬 로직: 켜져있으면 보안관이거나 총 먹는 즉시 꺼내고 쏜다
-            if Config.AutoKillMurderer then
-                if not myGun and LocalPlayer:FindFirstChild("Backpack") then
-                    local bpGun = LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Revolver")
-                    if bpGun and myChar:FindFirstChildOfClass("Humanoid") then
-                        myChar.Humanoid:EquipTool(bpGun)
-                        myGun = bpGun
+        else
+            -- 끄면 원상복구
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = p.Character.HumanoidRootPart
+                    if hrp.Size.X > 5 then
+                        hrp.Size = Vector3.new(2, 2, 1)
+                        hrp.Transparency = 1
                     end
-                end
-
-                if myGun then
-                    -- 머더 정수리 위 10스터드 위로 텔레포트
-                    myChar.HumanoidRootPart.CFrame = CFrame.new(mHrp.Position + Vector3.new(0, 10, 0), mHrp.Position)
-                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, mHrp.Position)
-                    myGun:Activate()
-                    if mouse1click then mouse1click() end
-                end
-            end
-
-            -- 사일런트 에임 (Magic Bullet): 허공에 쏴도 머더에게 꽂힘
-            if Config.SilentAim and myGun then
-                -- 머더의 히트박스를 내 카메라 바로 앞(5스터드)에 보이지 않게 끌어다 둠
-                -- 화면에 대충 쏘면 바로 눈앞에 있는 머더의 투명 히트박스에 맞게 됨 (벽뚫/미스 확률 0%)
-                mHrp.Size = Vector3.new(6, 6, 6)
-                mHrp.Transparency = 1
-                mHrp.CanCollide = false
-                mHrp.CFrame = Camera.CFrame * CFrame.new(0, 0, -5)
-            else
-                -- 기능 꺼지면 히트박스 원상복구
-                if mHrp.Size.X > 5 or mHrp.Transparency == 1 then
-                    mHrp.Size = Vector3.new(2, 2, 1)
-                    mHrp.Transparency = 0
                 end
             end
         end
     end)
 
-    -- ESP 및 잡다한 루프
+    -- 🔥 [원래 작동했던 그 방식] 내 코앞으로 싹 다 끌어오기 (Kill All Bring)
+    RunService.Heartbeat:Connect(function()
+        if Config.MurderKillAll and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local role, _ = GetPlayerRole(LocalPlayer)
+            if role == "Murderer" then
+                local myHrp = LocalPlayer.Character.HumanoidRootPart
+                local myChar = LocalPlayer.Character
+                local myKnife = myChar:FindFirstChild("Knife") or (LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Knife"))
+                
+                if myKnife then
+                    -- 칼 들고 허공 썰기 유지
+                    if myKnife.Parent ~= myChar and myChar:FindFirstChild("Humanoid") then
+                        myChar.Humanoid:EquipTool(myKnife)
+                    end
+                    myKnife:Activate()
+                    if mouse1click then mouse1click() end
+                end
+
+                -- 생존자들을 강제로 내 앞 3스터드 위치로 순간이동 (Bring All)
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
+                        local pRole, _ = GetPlayerRole(p)
+                        if pRole ~= "Murderer" then
+                            p.Character.HumanoidRootPart.CFrame = myHrp.CFrame * CFrame.new(0, 0, -3)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
     local espFolder = Instance.new("Folder", screenGui)
     espFolder.Name = "Valo_ESP_Exact"
     local gunEspFolder = Instance.new("Folder", screenGui)
@@ -521,8 +925,8 @@ local function LoadMurderMystery()
     local singleGunLabel = Instance.new("TextLabel", gunEspFolder)
     singleGunLabel.Size = UDim2.new(0, 110, 0, 20)
     singleGunLabel.BackgroundTransparency = 1
-    singleGunLabel.Text = "🔫 [떨어진 총]"
-    singleGunLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+    singleGunLabel.Text = "🟣 [떨어진 총]"
+    singleGunLabel.TextColor3 = Color3.fromRGB(180, 50, 255)
     singleGunLabel.Font = Enum.Font.GothamBold
     singleGunLabel.TextSize = 12
     singleGunLabel.Visible = false
@@ -540,8 +944,16 @@ local function LoadMurderMystery()
 
     RunService.RenderStepped:Connect(function()
         espFolder:ClearAllChildren()
-
+        
         local gunPart = FindDroppedGun()
+        if gunPart and not wasGunDropped then
+            wasGunDropped = true
+            notifyLbl.Visible = true
+            task.delay(6, function() notifyLbl.Visible = false end)
+        elseif not gunPart then
+            wasGunDropped = false
+        end
+
         if Config.ESP_GunDrop and gunPart then
             local gunPos = gunPart:IsA("BasePart") and gunPart.Position or gunPart:GetPivot().Position
             local pos, onScreen = Camera:WorldToViewportPoint(gunPos)
@@ -643,38 +1055,6 @@ local function LoadMurderMystery()
             LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end)
-
-    -- [ 머더 탭 연결 ]
-    local left1, right1 = CreateTab("🔪")
-    AddHeader(left1, "God-Tier Murder Cheats")
-    AddToggle(left1, "🎯 Silent Aim (에임 안대도 100% 명중)", function(v) Config.SilentAim = v end)
-    AddToggle(left1, "🔫 Auto Kill Murderer (전자동 즉사)", function(v) Config.AutoKillMurderer = v end)
-    
-    AddHeader(right1, "Gun Tools")
-    AddToggle(right1, "🔲 Show TP Gun Button (버튼 표시)", function(v) 
-        Config.TPGunButton = v 
-        if tpButtonGui then tpButtonGui.Enabled = v end
-    end)
-
-    local left2, right2 = CreateTab("👁")
-    AddHeader(left2, "Player ESP")
-    AddToggle(left2, "ESP Box", function(v) Config.ESP_Box = v end)
-    AddToggle(left2, "ESP Name", function(v) Config.ESP_Name = v end)
-    AddToggle(left2, "Exact Skeleton", function(v) Config.ESP_Skeleton = v end)
-    
-    AddHeader(left2, "Gun ESP")
-    AddToggle(left2, "🟣 ESP Dropped Gun (떨어진 총 표시)", function(v) Config.ESP_GunDrop = v end)
-
-    local left3, right3 = CreateTab("🏃")
-    AddHeader(left3, "Movement")
-    AddToggle(left3, "Safe Speed Boost", function(v) Config.Speed = v end)
-    AddToggle(left3, "Infinite Jump", function(v) Config.Jump = v end)
-    AddToggle(left3, "Noclip (Walk Through Walls)", function(v) Config.Noclip = v end)
-
-    Tabs[1].Btn.TextColor3 = Color3.fromRGB(255, 200, 200)
-    Tabs[1].Ind.Visible = true
-    Tabs[1].Container.Visible = true
-    currentTab = Tabs[1]
 end
 
 --------------------------------------------------------------------
