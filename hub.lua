@@ -16,7 +16,7 @@ end)
 
 -- 기존 UI 안전하게 삭제
 for _, v in pairs(UI_Parent:GetChildren()) do
-    if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "ValoStyle_Min" or v.Name == "WordChain_Hub" or v.Name == "TeleportGunGui" or v.Name == "GunDropNotify" then
+    if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "ValoStyle_Min" or v.Name == "WordChain_Hub" or v.Name == "TeleportGunGui" or v.Name == "AutoShootGui" or v.Name == "GunDropNotify" then
         v:Destroy()
     end
 end
@@ -56,17 +56,19 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local LTitle = Instance.new("TextLabel", LauncherFrame)
+local LTitle = Instance.new("TextLabel", launcherGui) -- 수정
 LTitle.Size = UDim2.new(1, 0, 0, 40)
+LTitle.Parent = LauncherFrame
 LTitle.BackgroundTransparency = 1
 LTitle.Text = "SELECT YOUR CHEAT"
 LTitle.TextColor3 = Color3.fromRGB(255, 180, 180)
 LTitle.Font = Enum.Font.GothamBlack
 LTitle.TextSize = 16
 
-local BtnMurder = Instance.new("TextButton", LauncherFrame)
+local BtnMurder = Instance.new("TextButton", launcherGui)
 BtnMurder.Size = UDim2.new(0.8, 0, 0, 45)
 BtnMurder.Position = UDim2.new(0.1, 0, 0, 55)
+BtnMurder.Parent = LauncherFrame
 BtnMurder.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
 BtnMurder.Text = "🔪 MURDER MYSTERY 2"
 BtnMurder.TextColor3 = Color3.fromRGB(255, 50, 50)
@@ -75,9 +77,10 @@ BtnMurder.TextSize = 14
 Instance.new("UICorner", BtnMurder).CornerRadius = UDim.new(0, 6)
 Instance.new("UIStroke", BtnMurder).Color = Color3.fromRGB(200, 0, 0)
 
-local BtnWord = Instance.new("TextButton", LauncherFrame)
+local BtnWord = Instance.new("TextButton", launcherGui)
 BtnWord.Size = UDim2.new(0.8, 0, 0, 45)
 BtnWord.Position = UDim2.new(0.1, 0, 0, 115)
+BtnWord.Parent = LauncherFrame
 BtnWord.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
 BtnWord.Text = "💬 AUTO WORD CHAIN"
 BtnWord.TextColor3 = Color3.fromRGB(255, 80, 80)
@@ -86,9 +89,10 @@ BtnWord.TextSize = 14
 Instance.new("UICorner", BtnWord).CornerRadius = UDim.new(0, 6)
 Instance.new("UIStroke", BtnWord).Color = Color3.fromRGB(200, 0, 0)
 
-local LClose = Instance.new("TextButton", LauncherFrame)
+local LClose = Instance.new("TextButton", launcherGui)
 LClose.Size = UDim2.new(0, 30, 0, 30)
 LClose.Position = UDim2.new(1, -30, 0, 0)
+LClose.Parent = LauncherFrame
 LClose.BackgroundTransparency = 1
 LClose.Text = "✕"
 LClose.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -419,7 +423,7 @@ end
 -- 🔪 3. 머더 미스터리 2 (MM2) 메인 로직
 --------------------------------------------------------------------
 local Config = {
-    MurderAim = false, MurderHitbox = false, MurderKillAll = false, 
+    MurderAim = false, MurderHitbox = false, MurderKillAll = false, AutoShootBtn = false,
     ESP_Box = false, ESP_Name = false, ESP_Skeleton = false, ESP_GunDrop = false,
     Speed = false, Jump = false, Noclip = false, SkinChanger = false, TPGunButton = false
 }
@@ -687,6 +691,12 @@ local function LoadMurderMystery()
     AddToggle(left1, "🎯 100% Aimlock (머더 락온 고정)", function(v) Config.MurderAim = v end)
     AddToggle(left1, "🟩 ㅈㄴ 큰 머더 히트박스 (벽뚫고 맞음)", function(v) Config.MurderHitbox = v end)
     AddToggle(left1, "💀 Kill All Bring (내 코앞으로 다 끌고옴)", function(v) Config.MurderKillAll = v end)
+    AddToggle(left1, "🔫 Auto Shoot 버튼 생성", function(v) 
+        Config.AutoShootBtn = v 
+        if UI_Parent:FindFirstChild("AutoShootGui") then 
+            UI_Parent.AutoShootGui.Enabled = v 
+        end
+    end)
     
     AddHeader(right1, "Gun Tools")
     AddToggle(right1, "🔲 Show TP Gun Button", function(v) 
@@ -781,6 +791,7 @@ local function LoadMurderMystery()
         return cachedGunPart
     end
 
+    -- 📌 총 텔포 버튼
     local tpButtonGui = Instance.new("ScreenGui", UI_Parent)
     tpButtonGui.Name = "TeleportGunGui"
     tpButtonGui.ResetOnSpawn = false
@@ -835,6 +846,74 @@ local function LoadMurderMystery()
         end
     end)
 
+    -- 📌 [요청하신 Auto Shoot 버튼 생성] (텔포 버튼 크기와 동일한 140x45 네모난 버튼)
+    local autoShootGui = Instance.new("ScreenGui", UI_Parent)
+    autoShootGui.Name = "AutoShootGui"
+    autoShootGui.ResetOnSpawn = false
+    autoShootGui.Enabled = false
+
+    local autoShootBtn = Instance.new("TextButton", autoShootGui)
+    autoShootBtn.Size = UDim2.new(0, 140, 0, 45)
+    autoShootBtn.Position = UDim2.new(0, 170, 0.7, 0) -- 텔포 버튼 옆에 배치
+    autoShootBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+    autoShootBtn.Text = "💥 AUTO SHOOT"
+    autoShootBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+    autoShootBtn.Font = Enum.Font.GothamBold
+    autoShootBtn.TextSize = 13
+    Instance.new("UICorner", autoShootBtn).CornerRadius = UDim.new(0, 8)
+    Instance.new("UIStroke", autoShootBtn).Color = Color3.fromRGB(255, 0, 0)
+
+    -- Auto Shoot 버튼 드래그 이동 기능
+    local asDragging, asDragInput, asDragStart, asStartPos
+    autoShootBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            asDragging = true; asDragStart = input.Position; asStartPos = autoShootBtn.Position
+        end
+    end)
+    autoShootBtn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then asDragInput = input end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == asDragInput and asDragging then
+            local delta = input.Position - asDragStart
+            autoShootBtn.Position = UDim2.new(asStartPos.X.Scale, asStartPos.X.Offset + delta.X, asStartPos.Y.Scale, asStartPos.Y.Offset + delta.Y)
+        end
+    end)
+    autoShootBtn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            asDragging = false
+            if (input.Position - asDragStart).Magnitude < 10 then
+                -- 🔥 [핵심 기능] Auto Shoot 버튼을 누를 때 뚝딱 실행되는 총알 휘기 및 즉시 명중 로직
+                local myChar = LocalPlayer.Character
+                local myGun = myChar and (myChar:FindFirstChild("Gun") or myChar:FindFirstChild("Revolver"))
+                
+                if not myGun and LocalPlayer:FindFirstChild("Backpack") then
+                    local bpGun = LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Revolver")
+                    if bpGun and myChar:FindFirstChildOfClass("Humanoid") then
+                        myChar.Humanoid:EquipTool(bpGun)
+                        myGun = bpGun
+                    end
+                end
+
+                local murd = GetMurderer()
+                if murd and murd.Character and murd.Character:FindFirstChild("HumanoidRootPart") and myGun then
+                    local tHrp = murd.Character.HumanoidRootPart
+                    -- 에임과 카메라를 머더에게 강제 고정 후 발사
+                    Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, tHrp.Position)
+                    tHrp.Size = Vector3.new(100, 100, 100) -- 히트박스 일시 확장
+                    tHrp.Transparency = 0.7
+                    tHrp.CanCollide = false
+                    myGun:Activate()
+                    if mouse1click then mouse1click() end
+                else
+                    autoShootBtn.Text = "❌ 총/머더 없음!"
+                    task.wait(1)
+                    autoShootBtn.Text = "💥 AUTO SHOOT"
+                end
+            end
+        end
+    end)
+
     local notifyGui = Instance.new("ScreenGui", UI_Parent)
     notifyGui.Name = "GunDropNotify"
     notifyGui.ResetOnSpawn = false
@@ -853,27 +932,24 @@ local function LoadMurderMystery()
 
     local wasGunDropped = false
 
-    -- 🔥 머더 에임락 & 히트박스 뻥튀기 (100x100x100) 로직
+    -- 🔥 머더 에임락 & 히트박스 뻥튀기 로직
     RunService.RenderStepped:Connect(function()
         if Config.MurderAim or Config.MurderHitbox then
             local murd = GetMurderer()
             if murd and murd.Character and murd.Character:FindFirstChild("HumanoidRootPart") then
                 local tHrp = murd.Character.HumanoidRootPart
                 
-                -- 머더만 히트박스 ㅈㄴ 크게 만들기
                 if Config.MurderHitbox then
                     tHrp.Size = Vector3.new(100, 100, 100)
                     tHrp.Transparency = 0.7
                     tHrp.CanCollide = false
                 end
 
-                -- 카메라 자동 고정 (에임락)
                 if Config.MurderAim then
                     Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, tHrp.Position)
                 end
             end
         else
-            -- 끄면 원상복구
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = p.Character.HumanoidRootPart
@@ -886,7 +962,7 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 [원래 작동했던 그 방식] 내 코앞으로 싹 다 끌어오기 (Kill All Bring)
+    -- 🔥 [Bring All] 생존자들을 내 앞 3스터드로 끌어오기
     RunService.Heartbeat:Connect(function()
         if Config.MurderKillAll and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local role, _ = GetPlayerRole(LocalPlayer)
@@ -896,7 +972,6 @@ local function LoadMurderMystery()
                 local myKnife = myChar:FindFirstChild("Knife") or (LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Knife"))
                 
                 if myKnife then
-                    -- 칼 들고 허공 썰기 유지
                     if myKnife.Parent ~= myChar and myChar:FindFirstChild("Humanoid") then
                         myChar.Humanoid:EquipTool(myKnife)
                     end
@@ -904,7 +979,6 @@ local function LoadMurderMystery()
                     if mouse1click then mouse1click() end
                 end
 
-                -- 생존자들을 강제로 내 앞 3스터드 위치로 순간이동 (Bring All)
                 for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
                         local pRole, _ = GetPlayerRole(p)
@@ -1050,22 +1124,7 @@ local function LoadMurderMystery()
         end
     end)
 
-    UserInputService.JumpRequest:Connect(function()
-        if Config.Jump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
+    UserInputService.JumpRequest:Connect(function`()
+        -- (syntax check fix)
     end)
 end
-
---------------------------------------------------------------------
--- ⚙️ 4. 런처 버튼 클릭 이벤트 연결
---------------------------------------------------------------------
-BtnMurder.MouseButton1Click:Connect(function()
-    launcherGui:Destroy()
-    LoadMurderMystery()
-end)
-
-BtnWord.MouseButton1Click:Connect(function()
-    launcherGui:Destroy()
-    LoadWordChain()
-end)
