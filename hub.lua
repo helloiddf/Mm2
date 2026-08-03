@@ -1,19 +1,30 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TextChatService = game:GetService("TextChatService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- 🔥 [Anti-AFK] 잠수 튕김 방지 (오토 파밍 유지)
+-- 🔥 [FPS 부스트 및 프레임 제한 완전 해제]
+pcall(function()
+    local Lighting = game:GetService("Lighting")
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+    Lighting.ShadowSoftness = 0
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    
+    -- PC 및 모바일 60FPS 제한 아예 없애버리기
+    if setfpscap then
+        setfpscap(9999)
+    end
+end)
+
+-- 🔥 [Anti-AFK] 잠수 튕김 방지
 LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- 🔥 기존 UI 깔끔하게 삭제
 local UI_Parent = LocalPlayer:WaitForChild("PlayerGui")
 pcall(function()
     local hui = (gethui and gethui()) or game:GetService("CoreGui")
@@ -21,7 +32,7 @@ pcall(function()
 end)
 
 for _, v in pairs(UI_Parent:GetChildren()) do
-    if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "ValoStyle_Min" or v.Name == "TeleportGunGui" or v.Name == "AutoShootGui" or v.Name == "AimlockGui" or v.Name == "GunDropNotify" then
+    if v.Name == "Launcher_Hub" or v.Name == "ValoStyle_Hub" or v.Name == "TeleportGunGui" or v.Name == "AutoShootGui" or v.Name == "AimlockGui" or v.Name == "GunDropNotify" then
         v:Destroy()
     end
 end
@@ -33,14 +44,12 @@ local launcherGui = Instance.new("ScreenGui", UI_Parent)
 launcherGui.Name = "Launcher_Hub"
 launcherGui.ResetOnSpawn = false
 launcherGui.IgnoreGuiInset = true
-launcherGui.DisplayOrder = 999999
 
 local LauncherFrame = Instance.new("Frame", launcherGui)
 LauncherFrame.Size = UDim2.new(0, 300, 0, 130)
 LauncherFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 LauncherFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 LauncherFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-LauncherFrame.BorderSizePixel = 0
 Instance.new("UICorner", LauncherFrame).CornerRadius = UDim.new(0, 8)
 local lStroke = Instance.new("UIStroke", LauncherFrame)
 lStroke.Color = Color3.fromRGB(255, 0, 0)
@@ -87,10 +96,10 @@ LClose.Font = Enum.Font.GothamBold
 LClose.MouseButton1Click:Connect(function() launcherGui:Destroy() end)
 
 --------------------------------------------------------------------
--- 🔪 2. 머더 미스터리 2 (MM2) 메인 로직 & 원래 UI
+-- 🔪 2. 메인 로직 
 --------------------------------------------------------------------
 local Config = {
-    MurderAim = false, MurderHitbox = false, MurderKillAll = false, SilentAim = false,
+    MurderAim = false, MurderKillAll = false, SilentAim = false,
     ESP_Box = false, ESP_Name = false, ESP_Skeleton = false, ESP_GunDrop = false,
     Speed = false, Jump = false, Noclip = false, AutoCoin = false
 }
@@ -115,9 +124,8 @@ end
 
 local function GetMurderer()
     for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-            local pRole = GetPlayerRole(p)
-            if pRole == "Murderer" then return p end
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
+            if GetPlayerRole(p) == "Murderer" then return p end
         end
     end
     return nil
@@ -128,14 +136,12 @@ local function LoadMurderMystery()
     screenGui.Name = "ValoStyle_Hub"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
-    screenGui.DisplayOrder = 999999
 
     local MainFrame = Instance.new("Frame", screenGui)
     MainFrame.Size = UDim2.new(0, 520, 0, 360)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
     
@@ -159,7 +165,6 @@ local function LoadMurderMystery()
     TopBar.Size = UDim2.new(1, 0, 0, 30)
     TopBar.BackgroundColor3 = Color3.fromRGB(10, 0, 0)
     TopBar.BackgroundTransparency = 0.5
-    TopBar.BorderSizePixel = 0
 
     local Title = Instance.new("TextLabel", TopBar)
     Title.Size = UDim2.new(1, -100, 1, 0)
@@ -180,20 +185,22 @@ local function LoadMurderMystery()
     CloseBtn.Font = Enum.Font.GothamBold
     CloseBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
-    local dragging, dragStart, startPos
+    local dragStart, startPos
     TopBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true; dragStart = input.Position; startPos = MainFrame.Position
+            dragStart = input.Position; startPos = MainFrame.Position
         end
     end)
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        if dragStart and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
             MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+        if dragStart and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+            dragStart = nil
+        end
     end)
 
     local Sidebar = Instance.new("Frame", MainFrame)
@@ -201,7 +208,6 @@ local function LoadMurderMystery()
     Sidebar.Position = UDim2.new(0, 0, 0, 30)
     Sidebar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     Sidebar.BackgroundTransparency = 0.6
-    Sidebar.BorderSizePixel = 0
     local SidebarLayout = Instance.new("UIListLayout", Sidebar)
     SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     SidebarLayout.Padding = UDim.new(0, 8)
@@ -211,7 +217,6 @@ local function LoadMurderMystery()
     ContentArea.Size = UDim2.new(1, -40, 1, -60)
     ContentArea.Position = UDim2.new(0, 40, 0, 30)
     ContentArea.BackgroundTransparency = 1
-    ContentArea.BorderSizePixel = 0
 
     local Tabs = {}
     local currentTab = nil
@@ -299,7 +304,6 @@ local function LoadMurderMystery()
         switch.Position = UDim2.new(1, -30, 0.5, -7)
         switch.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
         Instance.new("UICorner", switch).CornerRadius = UDim.new(1, 0)
-        Instance.new("UIStroke", switch).Color = Color3.fromRGB(100, 0, 0)
         
         local circle = Instance.new("Frame", switch)
         circle.Size = UDim2.new(0, 10, 0, 10)
@@ -319,7 +323,7 @@ local function LoadMurderMystery()
     -- 🔥 UI 메뉴 구성
     local left1, right1 = CreateTab("🔪")
     AddHeader(left1, "God-Tier Murder Cheats")
-    AddToggle(left1, "🎯 Magic Bullet (멀리서도 무조건 명중)", function(v) Config.SilentAim = v end)
+    AddToggle(left1, "🎯 Magic Bullet (에임정확도 상승+투명화)", function(v) Config.SilentAim = v end)
     AddToggle(left1, "💀 Kill All Bring (안전한 자동 암살)", function(v) Config.MurderKillAll = v end)
     
     AddHeader(right1, "Buttons & Farm")
@@ -340,8 +344,15 @@ local function LoadMurderMystery()
     AddToggle(left2, "ESP Name", function(v) Config.ESP_Name = v end)
     AddToggle(left2, "Exact Skeleton", function(v) Config.ESP_Skeleton = v end)
     
-    AddHeader(left2, "Gun ESP & Notify")
+    AddHeader(left2, "Gun ESP & Settings")
     AddToggle(left2, "🟣 ESP Gun & 보안관 데스 알람", function(v) Config.ESP_GunDrop = v end)
+    AddToggle(left2, "🔓 FPS 제한 해제 (프레임 한계 돌파)", function(v) 
+        pcall(function()
+            if setfpscap then
+                setfpscap(v and 9999 or 60)
+            end
+        end)
+    end)
 
     local left3, right3 = CreateTab("🏃")
     AddHeader(left3, "Movement")
@@ -355,7 +366,7 @@ local function LoadMurderMystery()
     currentTab = Tabs[1]
 
     --------------------------------------------------------------------
-    -- ⚙️ 기능 구현부 (드래그 버튼 함수)
+    -- ⚙️ 기능 구현부 (드래그 버튼)
     --------------------------------------------------------------------
     local function createDraggableBtn(name, text, color, xPos, yPos)
         local gui = Instance.new("ScreenGui", UI_Parent)
@@ -374,30 +385,29 @@ local function LoadMurderMystery()
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
         Instance.new("UIStroke", btn).Color = color
 
-        local dragStart, startPos
+        local dStart, sPos
         btn.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragStart = input.Position; startPos = btn.Position
+                dStart = input.Position; sPos = btn.Position
             end
         end)
         btn.InputChanged:Connect(function(input)
-            if dragStart and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
-                btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            if dStart and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - dStart
+                btn.Position = UDim2.new(sPos.X.Scale, sPos.X.Offset + delta.X, sPos.Y.Scale, sPos.Y.Offset + delta.Y)
             end
         end)
         btn.InputEnded:Connect(function(input)
-            if dragStart and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-                dragStart = nil
+            if dStart and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+                dStart = nil
             end
         end)
         return btn, btn.InputEnded
     end
 
-    -- 📌 [수정 완료] 에임락(Aimlock) 버튼 작동 로직
+    -- 📌 에임락(Aimlock)
     local aimBtn, aimEnded = createDraggableBtn("AimlockGui", "🎯 AIMLOCK (OFF)", Color3.fromRGB(100, 255, 100), 20, -55)
     aimEnded:Connect(function(input)
-        -- 터치 및 클릭 후 마우스를 15픽셀 미만으로 움직였을 때만 클릭으로 간주 (드래그와 클릭 분리)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             Config.MurderAim = not Config.MurderAim
             aimBtn.Text = Config.MurderAim and "🎯 AIMLOCK (ON)" or "🎯 AIMLOCK (OFF)"
@@ -405,25 +415,16 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 📌 [수정 완료] 총 텔포(TP to Gun) 및 떨어진 총 찾기
-    local function FindDroppedGun()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v.Name == "GunDrop" and v:IsA("BasePart") then
-                return v
-            end
-        end
-        return nil
-    end
-
+    -- 📌 총 텔포(TP to Gun)
     local tpBtn, tpEnded = createDraggableBtn("TeleportGunGui", "🔫 총에 텔포하기", Color3.fromRGB(255, 100, 100), 20, 0)
     tpEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            local gunPart = FindDroppedGun()
+            local gunPart = workspace:FindFirstChild("GunDrop")
             if gunPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 local hrp = LocalPlayer.Character.HumanoidRootPart
                 local originalCFrame = hrp.CFrame
                 hrp.CFrame = gunPart.CFrame
-                task.wait(0.3) 
+                task.wait(0.4)
                 hrp.CFrame = originalCFrame
             else
                 tpBtn.Text = "❌ 총 없음!"
@@ -433,7 +434,7 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 📌 [수정 완료] 오토 샷 (Auto Shoot)
+    -- 📌 오토 샷 (Auto Shoot)
     local asBtn, asEnded = createDraggableBtn("AutoShootGui", "💥 AUTO SHOOT", Color3.fromRGB(255, 100, 100), 170, 0)
     asEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -453,16 +454,17 @@ local function LoadMurderMystery()
             local murd = GetMurderer()
             if murd and murd.Character and murd.Character:FindFirstChild("HumanoidRootPart") and myGun and myHrp then
                 local tHrp = murd.Character.HumanoidRootPart
-                local origTargetCF = tHrp.CFrame
+                local origCF = myHrp.CFrame
                 
-                -- 머더를 내 총구 바로 앞으로 강제 이동시킨 후 쏘기 (서버에 완벽 인식됨)
-                tHrp.CFrame = myHrp.CFrame * CFrame.new(0, 0, -3)
-                task.wait(0.1)
+                myHrp.CFrame = tHrp.CFrame * CFrame.new(0, 0, 3.5)
+                task.wait(0.15) 
                 
+                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, tHrp.Position)
                 myGun:Activate()
+                if mouse1click then pcall(mouse1click) end
                 
-                task.wait(0.1)
-                tHrp.CFrame = origTargetCF
+                task.wait(0.15)
+                myHrp.CFrame = origCF
 
                 asBtn.Text = "💥 발사 완료!"
                 task.wait(1)
@@ -475,7 +477,38 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 [수정 완료] 보안관 데스 알람 & ESP (Gun Drop Notify)
+    -- 🔥 [프레임 방어] 최적화된 루프
+    task.spawn(function()
+        while task.wait(0.5) do
+            local murd = GetMurderer()
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                    if Config.SilentAim and p == murd and hrp then
+                        hrp.Size = Vector3.new(120, 120, 120)
+                        hrp.Transparency = 0.8
+                        hrp.CanCollide = false
+                    elseif not Config.SilentAim and hrp and hrp.Size.X > 5 then
+                        hrp.Size = Vector3.new(2, 2, 1)
+                        hrp.Transparency = 1
+                    end
+                    
+                    if p ~= murd then
+                        for _, part in ipairs(p.Character:GetChildren()) do
+                            if Config.SilentAim then
+                                if part:IsA("BasePart") or part:IsA("Decal") then part.Transparency = 1 end
+                            else
+                                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.Transparency = 0 end
+                                if part:IsA("Decal") then part.Transparency = 0 end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    -- 🔥 ESP 및 알람
     local notifyGui = Instance.new("ScreenGui", UI_Parent)
     notifyGui.Name = "GunDropNotify"
     notifyGui.ResetOnSpawn = false
@@ -492,10 +525,8 @@ local function LoadMurderMystery()
     Instance.new("UICorner", notifyLbl).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", notifyLbl).Color = Color3.fromRGB(255, 50, 50)
     
-    local wasGunDropped = false
     local espFolder = Instance.new("Folder", screenGui)
-    espFolder.Name = "Valo_ESP_Exact"
-
+    espFolder.Name = "Valo_ESP"
     local singleGunLabel = Instance.new("TextLabel", espFolder)
     singleGunLabel.Size = UDim2.new(0, 110, 0, 20)
     singleGunLabel.BackgroundTransparency = 1
@@ -505,6 +536,7 @@ local function LoadMurderMystery()
     singleGunLabel.TextSize = 12
     singleGunLabel.Visible = false
 
+    local wasGunDropped = false
     local function DrawLine(p1, p2, parent, color)
         local line = Instance.new("Frame", parent)
         line.BackgroundColor3 = color
@@ -519,15 +551,13 @@ local function LoadMurderMystery()
     RunService.RenderStepped:Connect(function()
         espFolder:ClearAllChildren()
         
-        -- 에임 락 (카메라 시점 강제 추적 - 부드럽게)
         local murd = GetMurderer()
         if Config.MurderAim and murd and murd.Character and murd.Character:FindFirstChild("HumanoidRootPart") then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, murd.Character.HumanoidRootPart.Position)
+            Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, murd.Character.HumanoidRootPart.Position)
         end
         
-        -- 총 드롭 확인 및 ESP
         if Config.ESP_GunDrop then
-            local gunPart = FindDroppedGun()
+            local gunPart = workspace:FindFirstChild("GunDrop")
             if gunPart then
                 if not wasGunDropped then
                     wasGunDropped = true
@@ -546,52 +576,20 @@ local function LoadMurderMystery()
             end
         end
 
-        -- 플레이어 ESP & 매직 불릿
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
                 local hrp = p.Character.HumanoidRootPart
                 local head = p.Character:FindFirstChild("Head")
                 local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                local roleName, roleColor = GetPlayerRole(p)
-
-                if Config.SilentAim and p == murd then
-                    hrp.Size = Vector3.new(100, 100, 100)
-                    hrp.Transparency = 0.8
-                    hrp.CanCollide = false
-                elseif not Config.SilentAim and hrp.Size.X > 5 then
-                    hrp.Size = Vector3.new(2, 2, 1)
-                    hrp.Transparency = 1
-                end
                 
                 if onScreen then
+                    local roleName, roleColor = GetPlayerRole(p)
+                    
                     if Config.ESP_Skeleton and head then
                         local torso = p.Character:FindFirstChild("Torso") or p.Character:FindFirstChild("UpperTorso")
-                        local lArm = p.Character:FindFirstChild("Left Arm") or p.Character:FindFirstChild("LeftUpperArm")
-                        local rArm = p.Character:FindFirstChild("Right Arm") or p.Character:FindFirstChild("RightUpperArm")
-                        local lLeg = p.Character:FindFirstChild("Left Leg") or p.Character:FindFirstChild("LeftUpperLeg")
-                        local rLeg = p.Character:FindFirstChild("Right Leg") or p.Character:FindFirstChild("RightUpperLeg")
-                        
                         if torso then
-                            local tC = torso.CFrame
-                            local neckW = Camera:WorldToViewportPoint((tC * CFrame.new(0, 1, 0)).Position)
-                            local pelvisW = Camera:WorldToViewportPoint((tC * CFrame.new(0, -1, 0)).Position)
-                            local headW = Camera:WorldToViewportPoint(head.Position)
-                            DrawLine(Vector2.new(headW.X, headW.Y), Vector2.new(neckW.X, neckW.Y), espFolder, roleColor)
-                            DrawLine(Vector2.new(neckW.X, neckW.Y), Vector2.new(pelvisW.X, pelvisW.Y), espFolder, roleColor)
-                            
-                            local lsW = Camera:WorldToViewportPoint((tC * CFrame.new(-1, 0.5, 0)).Position)
-                            local rsW = Camera:WorldToViewportPoint((tC * CFrame.new(1, 0.5, 0)).Position)
-                            local lhW = Camera:WorldToViewportPoint((tC * CFrame.new(-0.5, -1, 0)).Position)
-                            local rhW = Camera:WorldToViewportPoint((tC * CFrame.new(0.5, -1, 0)).Position)
-                            DrawLine(Vector2.new(neckW.X, neckW.Y), Vector2.new(lsW.X, lsW.Y), espFolder, roleColor)
-                            DrawLine(Vector2.new(neckW.X, neckW.Y), Vector2.new(rsW.X, rsW.Y), espFolder, roleColor)
-                            DrawLine(Vector2.new(pelvisW.X, pelvisW.Y), Vector2.new(lhW.X, lhW.Y), espFolder, roleColor)
-                            DrawLine(Vector2.new(pelvisW.X, pelvisW.Y), Vector2.new(rhW.X, rhW.Y), espFolder, roleColor)
-
-                            if lArm then local laW = Camera:WorldToViewportPoint((lArm.CFrame * CFrame.new(0, -0.5, 0)).Position) DrawLine(Vector2.new(lsW.X, lsW.Y), Vector2.new(laW.X, laW.Y), espFolder, roleColor) end
-                            if rArm then local raW = Camera:WorldToViewportPoint((rArm.CFrame * CFrame.new(0, -0.5, 0)).Position) DrawLine(Vector2.new(rsW.X, rsW.Y), Vector2.new(raW.X, raW.Y), espFolder, roleColor) end
-                            if lLeg then local llW = Camera:WorldToViewportPoint((lLeg.CFrame * CFrame.new(0, -0.5, 0)).Position) DrawLine(Vector2.new(lhW.X, lhW.Y), Vector2.new(llW.X, llW.Y), espFolder, roleColor) end
-                            if rLeg then local rlW = Camera:WorldToViewportPoint((rLeg.CFrame * CFrame.new(0, -0.5, 0)).Position) DrawLine(Vector2.new(rhW.X, rhW.Y), Vector2.new(rlW.X, rlW.Y), espFolder, roleColor) end
+                            local neckW = Camera:WorldToViewportPoint((torso.CFrame * CFrame.new(0, 1, 0)).Position)
+                            DrawLine(Vector2.new(Camera:WorldToViewportPoint(head.Position).X, Camera:WorldToViewportPoint(head.Position).Y), Vector2.new(neckW.X, neckW.Y), espFolder, roleColor)
                         end
                     end
 
@@ -627,29 +625,31 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 [수정 완료] 오토 코인 파밍 (MM2 구조 픽스)
+    -- 🔥 [오토 코인 파밍] 
     task.spawn(function()
-        while task.wait(0.2) do
-            if Config.AutoCoin then
-                pcall(function()
-                    local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    local eco = workspace:FindFirstChild("NormalEconomy")
-                    local coinContainer = eco and eco:FindFirstChild("CoinContainer")
-                    if myHrp and coinContainer then
-                        for _, coin in ipairs(coinContainer:GetChildren()) do
-                            if coin.Name == "Coin_Server" and coin:IsA("BasePart") and coin.Transparency < 1 then
-                                myHrp.CFrame = coin.CFrame
-                                task.wait(0.25)
-                                if not Config.AutoCoin then break end
+        while task.wait(0.1) do
+            if Config.AutoCoin and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local myHrp = LocalPlayer.Character.HumanoidRootPart
+                local eco = workspace:FindFirstChild("NormalEconomy")
+                local coinContainer = eco and eco:FindFirstChild("CoinContainer")
+                
+                if coinContainer then
+                    for _, coin in ipairs(coinContainer:GetChildren()) do
+                        if not Config.AutoCoin then break end
+                        if coin.Name == "Coin_Server" then
+                            local part = coin:IsA("Model") and coin.PrimaryPart or coin
+                            if part and part.Transparency < 1 then
+                                myHrp.CFrame = part.CFrame
+                                task.wait(0.35)
                             end
                         end
                     end
-                end)
+                end
             end
         end
     end)
 
-    -- 🔥 [수정 완료] 킬 올 (순간이동 암살)
+    -- 🔥 [킬 올] 
     task.spawn(function()
         while task.wait(0.05) do
             if Config.MurderKillAll and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -660,13 +660,10 @@ local function LoadMurderMystery()
                     local myKnife = myChar:FindFirstChild("Knife") or (LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Knife"))
 
                     if myKnife and myHrp then
-                        if myKnife.Parent ~= myChar and myChar:FindFirstChild("Humanoid") then
-                            myChar.Humanoid:EquipTool(myKnife)
-                            task.wait(0.1)
-                        end
+                        if myKnife.Parent ~= myChar then myChar.Humanoid:EquipTool(myKnife) task.wait(0.1) end
                         for _, p in ipairs(Players:GetPlayers()) do
                             if not Config.MurderKillAll then break end 
-                            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
                                 if GetPlayerRole(p) ~= "Murderer" then
                                     myHrp.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
                                     myKnife:Activate()
