@@ -13,7 +13,6 @@ pcall(function()
     Lighting.ShadowSoftness = 0
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     
-    -- PC 및 모바일 60FPS 제한 아예 없애버리기
     if setfpscap then
         setfpscap(9999)
     end
@@ -38,7 +37,7 @@ for _, v in pairs(UI_Parent:GetChildren()) do
 end
 
 --------------------------------------------------------------------
--- 🚀 1. 최초 실행 런처 UI (원래 디자인)
+-- 🚀 1. 최초 실행 런처 UI (Blue & Black)
 --------------------------------------------------------------------
 local launcherGui = Instance.new("ScreenGui", UI_Parent)
 launcherGui.Name = "Launcher_Hub"
@@ -49,17 +48,17 @@ local LauncherFrame = Instance.new("Frame", launcherGui)
 LauncherFrame.Size = UDim2.new(0, 300, 0, 130)
 LauncherFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 LauncherFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-LauncherFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+LauncherFrame.BackgroundColor3 = Color3.fromRGB(5, 10, 15) -- 블랙
 Instance.new("UICorner", LauncherFrame).CornerRadius = UDim.new(0, 8)
 local lStroke = Instance.new("UIStroke", LauncherFrame)
-lStroke.Color = Color3.fromRGB(255, 0, 0)
+lStroke.Color = Color3.fromRGB(0, 120, 255) -- 블루
 lStroke.Thickness = 2
 
 local lGradient = Instance.new("UIGradient", LauncherFrame)
 lGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 0, 0)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 0, 0))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 5, 10)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 60, 150)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 5, 10))
 }
 lGradient.Rotation = 45
 
@@ -71,20 +70,20 @@ local LTitle = Instance.new("TextLabel", LauncherFrame)
 LTitle.Size = UDim2.new(1, 0, 0, 40)
 LTitle.BackgroundTransparency = 1
 LTitle.Text = "SELECT YOUR CHEAT"
-LTitle.TextColor3 = Color3.fromRGB(255, 180, 180)
+LTitle.TextColor3 = Color3.fromRGB(150, 200, 255)
 LTitle.Font = Enum.Font.GothamBlack
 LTitle.TextSize = 16
 
 local BtnMurder = Instance.new("TextButton", LauncherFrame)
 BtnMurder.Size = UDim2.new(0.8, 0, 0, 45)
 BtnMurder.Position = UDim2.new(0.1, 0, 0, 55)
-BtnMurder.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
+BtnMurder.BackgroundColor3 = Color3.fromRGB(0, 15, 30)
 BtnMurder.Text = "🔪 MURDER MYSTERY 2"
-BtnMurder.TextColor3 = Color3.fromRGB(255, 50, 50)
+BtnMurder.TextColor3 = Color3.fromRGB(50, 150, 255)
 BtnMurder.Font = Enum.Font.GothamBold
 BtnMurder.TextSize = 14
 Instance.new("UICorner", BtnMurder).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", BtnMurder).Color = Color3.fromRGB(200, 0, 0)
+Instance.new("UIStroke", BtnMurder).Color = Color3.fromRGB(0, 100, 200)
 
 local LClose = Instance.new("TextButton", LauncherFrame)
 LClose.Size = UDim2.new(0, 30, 0, 30)
@@ -146,14 +145,14 @@ local function LoadMurderMystery()
     Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
     
     local mStroke = Instance.new("UIStroke", MainFrame)
-    mStroke.Color = Color3.fromRGB(255, 0, 0)
+    mStroke.Color = Color3.fromRGB(0, 120, 255)
     mStroke.Thickness = 2.5
 
     local mGradient = Instance.new("UIGradient", MainFrame)
     mGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 0, 0)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 0, 0))
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 10, 15)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 60, 150)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 10, 15))
     }
     mGradient.Rotation = -45
 
@@ -163,15 +162,15 @@ local function LoadMurderMystery()
 
     local TopBar = Instance.new("Frame", MainFrame)
     TopBar.Size = UDim2.new(1, 0, 0, 30)
-    TopBar.BackgroundColor3 = Color3.fromRGB(10, 0, 0)
+    TopBar.BackgroundColor3 = Color3.fromRGB(0, 15, 30)
     TopBar.BackgroundTransparency = 0.5
 
     local Title = Instance.new("TextLabel", TopBar)
     Title.Size = UDim2.new(1, -100, 1, 0)
     Title.Position = UDim2.new(0, 12, 0, 0)
     Title.BackgroundTransparency = 1
-    Title.Text = "BLOOD // MURDER MYSTERY PRO"
-    Title.TextColor3 = Color3.fromRGB(255, 100, 100)
+    Title.Text = "도현님의 지도"
+    Title.TextColor3 = Color3.fromRGB(150, 220, 255)
     Title.Font = Enum.Font.GothamBlack
     Title.TextSize = 13
     Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -181,7 +180,7 @@ local function LoadMurderMystery()
     CloseBtn.Position = UDim2.new(1, -35, 0, 0)
     CloseBtn.BackgroundTransparency = 1
     CloseBtn.Text = "✕"
-    CloseBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+    CloseBtn.TextColor3 = Color3.fromRGB(100, 150, 255)
     CloseBtn.Font = Enum.Font.GothamBold
     CloseBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
@@ -206,7 +205,7 @@ local function LoadMurderMystery()
     local Sidebar = Instance.new("Frame", MainFrame)
     Sidebar.Size = UDim2.new(0, 40, 1, -60)
     Sidebar.Position = UDim2.new(0, 0, 0, 30)
-    Sidebar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Sidebar.BackgroundColor3 = Color3.fromRGB(0, 5, 10)
     Sidebar.BackgroundTransparency = 0.6
     local SidebarLayout = Instance.new("UIListLayout", Sidebar)
     SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -226,13 +225,13 @@ local function LoadMurderMystery()
         TabBtn.Size = UDim2.new(0, 32, 0, 32)
         TabBtn.BackgroundTransparency = 1
         TabBtn.Text = iconText
-        TabBtn.TextColor3 = Color3.fromRGB(150, 100, 100)
+        TabBtn.TextColor3 = Color3.fromRGB(100, 150, 200)
         TabBtn.Font = Enum.Font.GothamBold
         TabBtn.TextSize = 16
 
         local Indicator = Instance.new("Frame", TabBtn)
         Indicator.Size = UDim2.new(0, 3, 1, 0)
-        Indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        Indicator.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
         Indicator.Visible = false
 
         local TabContainer = Instance.new("Frame", ContentArea)
@@ -258,11 +257,11 @@ local function LoadMurderMystery()
 
         TabBtn.MouseButton1Click:Connect(function()
             if currentTab then
-                currentTab.Btn.TextColor3 = Color3.fromRGB(150, 100, 100)
+                currentTab.Btn.TextColor3 = Color3.fromRGB(100, 150, 200)
                 currentTab.Ind.Visible = false
                 currentTab.Container.Visible = false
             end
-            TabBtn.TextColor3 = Color3.fromRGB(255, 200, 200)
+            TabBtn.TextColor3 = Color3.fromRGB(150, 220, 255)
             Indicator.Visible = true
             TabContainer.Visible = true
             currentTab = {Btn = TabBtn, Ind = Indicator, Container = TabContainer}
@@ -277,7 +276,7 @@ local function LoadMurderMystery()
         lbl.Size = UDim2.new(1, 0, 0, 24)
         lbl.BackgroundTransparency = 1
         lbl.Text = text
-        lbl.TextColor3 = Color3.fromRGB(255, 120, 120)
+        lbl.TextColor3 = Color3.fromRGB(100, 180, 255)
         lbl.Font = Enum.Font.GothamBlack
         lbl.TextSize = 12
         lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -294,7 +293,7 @@ local function LoadMurderMystery()
         lbl.Size = UDim2.new(0.75, 0, 1, 0)
         lbl.BackgroundTransparency = 1
         lbl.Text = " " .. text
-        lbl.TextColor3 = Color3.fromRGB(220, 200, 200)
+        lbl.TextColor3 = Color3.fromRGB(200, 220, 240)
         lbl.Font = Enum.Font.GothamBold
         lbl.TextSize = 11
         lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -302,19 +301,19 @@ local function LoadMurderMystery()
         local switch = Instance.new("Frame", btn)
         switch.Size = UDim2.new(0, 26, 0, 14)
         switch.Position = UDim2.new(1, -30, 0.5, -7)
-        switch.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+        switch.BackgroundColor3 = Color3.fromRGB(10, 20, 30)
         Instance.new("UICorner", switch).CornerRadius = UDim.new(1, 0)
         
         local circle = Instance.new("Frame", switch)
         circle.Size = UDim2.new(0, 10, 0, 10)
         circle.Position = UDim2.new(0, 2, 0.5, -5)
-        circle.BackgroundColor3 = Color3.fromRGB(150, 100, 100)
+        circle.BackgroundColor3 = Color3.fromRGB(100, 150, 200)
         Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
 
         btn.MouseButton1Click:Connect(function()
             state = not state
-            switch.BackgroundColor3 = state and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(30, 10, 10)
-            circle.BackgroundColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 100, 100)
+            switch.BackgroundColor3 = state and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(10, 20, 30)
+            circle.BackgroundColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 150, 200)
             circle.Position = state and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)
             if callback then callback(state) end
         end)
@@ -323,7 +322,7 @@ local function LoadMurderMystery()
     -- 🔥 UI 메뉴 구성
     local left1, right1 = CreateTab("🔪")
     AddHeader(left1, "God-Tier Murder Cheats")
-    AddToggle(left1, "🎯 Magic Bullet (에임정확도 상승+투명화)", function(v) Config.SilentAim = v end)
+    AddToggle(left1, "🎯 Magic Bullet (터치 샷 100% 명중 보정)", function(v) Config.SilentAim = v end)
     AddToggle(left1, "💀 Kill All Bring (안전한 자동 암살)", function(v) Config.MurderKillAll = v end)
     
     AddHeader(right1, "Buttons & Farm")
@@ -348,9 +347,7 @@ local function LoadMurderMystery()
     AddToggle(left2, "🟣 ESP Gun & 보안관 데스 알람", function(v) Config.ESP_GunDrop = v end)
     AddToggle(left2, "🔓 FPS 제한 해제 (프레임 한계 돌파)", function(v) 
         pcall(function()
-            if setfpscap then
-                setfpscap(v and 9999 or 60)
-            end
+            if setfpscap then setfpscap(v and 9999 or 60) end
         end)
     end)
 
@@ -360,7 +357,7 @@ local function LoadMurderMystery()
     AddToggle(left3, "Infinite Jump", function(v) Config.Jump = v end)
     AddToggle(left3, "Noclip (Walk Through Walls)", function(v) Config.Noclip = v end)
 
-    Tabs[1].Btn.TextColor3 = Color3.fromRGB(255, 200, 200)
+    Tabs[1].Btn.TextColor3 = Color3.fromRGB(150, 220, 255)
     Tabs[1].Ind.Visible = true
     Tabs[1].Container.Visible = true
     currentTab = Tabs[1]
@@ -377,7 +374,7 @@ local function LoadMurderMystery()
         local btn = Instance.new("TextButton", gui)
         btn.Size = UDim2.new(0, 140, 0, 45)
         btn.Position = UDim2.new(0, xPos, 0.7, yPos)
-        btn.BackgroundColor3 = Color3.fromRGB(color.R*255/2, color.G*255/2, color.B*255/2)
+        btn.BackgroundColor3 = Color3.fromRGB(color.R*50, color.G*50, color.B*50)
         btn.Text = text
         btn.TextColor3 = color
         btn.Font = Enum.Font.GothamBold
@@ -405,18 +402,18 @@ local function LoadMurderMystery()
         return btn, btn.InputEnded
     end
 
-    -- 📌 에임락(Aimlock)
-    local aimBtn, aimEnded = createDraggableBtn("AimlockGui", "🎯 AIMLOCK (OFF)", Color3.fromRGB(100, 255, 100), 20, -55)
+    -- 📌 에임락(Aimlock) 버튼
+    local aimBtn, aimEnded = createDraggableBtn("AimlockGui", "🎯 AIMLOCK (OFF)", Color3.fromRGB(0, 200, 255), 20, -55)
     aimEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             Config.MurderAim = not Config.MurderAim
             aimBtn.Text = Config.MurderAim and "🎯 AIMLOCK (ON)" or "🎯 AIMLOCK (OFF)"
-            aimBtn.TextColor3 = Config.MurderAim and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(100, 255, 100)
+            aimBtn.TextColor3 = Config.MurderAim and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(0, 200, 255)
         end
     end)
 
     -- 📌 총 텔포(TP to Gun)
-    local tpBtn, tpEnded = createDraggableBtn("TeleportGunGui", "🔫 총에 텔포하기", Color3.fromRGB(255, 100, 100), 20, 0)
+    local tpBtn, tpEnded = createDraggableBtn("TeleportGunGui", "🔫 총에 텔포하기", Color3.fromRGB(150, 150, 255), 20, 0)
     tpEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             local gunPart = workspace:FindFirstChild("GunDrop")
@@ -434,8 +431,8 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 📌 오토 샷 (Auto Shoot)
-    local asBtn, asEnded = createDraggableBtn("AutoShootGui", "💥 AUTO SHOOT", Color3.fromRGB(255, 100, 100), 170, 0)
+    -- 📌 오토 샷 버튼
+    local asBtn, asEnded = createDraggableBtn("AutoShootGui", "💥 AUTO SHOOT", Color3.fromRGB(255, 150, 50), 170, 0)
     asEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             local myChar = LocalPlayer.Character
@@ -477,7 +474,35 @@ local function LoadMurderMystery()
         end
     end)
 
-    -- 🔥 [프레임 방어] 최적화된 루프
+    -- 🔥 [모바일 탭 샷 완벽 픽스] - 화면 터치 시 총알 튀는 현상 방지
+    UserInputService.InputBegan:Connect(function(input, gp)
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+            if Config.SilentAim or Config.MurderAim then
+                local myChar = LocalPlayer.Character
+                local myGun = myChar and (myChar:FindFirstChild("Gun") or myChar:FindFirstChild("Revolver"))
+                if myGun then
+                    local murd = GetMurderer()
+                    if murd and murd.Character and murd.Character:FindFirstChild("HumanoidRootPart") then
+                        local tHrp = murd.Character.HumanoidRootPart
+                        local origCF = tHrp.CFrame
+                        local origSize = tHrp.Size
+                        
+                        -- 모바일에서 화면을 탭하여 총을 쏠 때, 총알이 딴 데 박히지 않도록
+                        -- 대상의 히트박스를 카메라(총구) 바로 앞으로 강제 소환 후 100% 명중시킴
+                        tHrp.Size = Vector3.new(50, 50, 50)
+                        tHrp.CFrame = Camera.CFrame * CFrame.new(0, 0, -10)
+                        
+                        task.delay(0.15, function()
+                            tHrp.CFrame = origCF
+                            tHrp.Size = origSize
+                        end)
+                    end
+                end
+            end
+        end
+    end)
+
+    -- 🔥 [프레임 방어] 최적화 루프
     task.spawn(function()
         while task.wait(0.5) do
             local murd = GetMurderer()
@@ -516,14 +541,14 @@ local function LoadMurderMystery()
     local notifyLbl = Instance.new("TextLabel", notifyGui)
     notifyLbl.Size = UDim2.new(0, 340, 0, 40)
     notifyLbl.Position = UDim2.new(1, -360, 1, -80)
-    notifyLbl.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
-    notifyLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+    notifyLbl.BackgroundColor3 = Color3.fromRGB(0, 15, 30)
+    notifyLbl.TextColor3 = Color3.fromRGB(100, 200, 255)
     notifyLbl.Text = "🚨 보안관이 죽었습니다! 텔포 하여 총을 먹어주세요."
     notifyLbl.Font = Enum.Font.GothamBold
     notifyLbl.TextSize = 13
     notifyLbl.Visible = false
     Instance.new("UICorner", notifyLbl).CornerRadius = UDim.new(0, 6)
-    Instance.new("UIStroke", notifyLbl).Color = Color3.fromRGB(255, 50, 50)
+    Instance.new("UIStroke", notifyLbl).Color = Color3.fromRGB(0, 120, 255)
     
     local espFolder = Instance.new("Folder", screenGui)
     espFolder.Name = "Valo_ESP"
@@ -531,7 +556,7 @@ local function LoadMurderMystery()
     singleGunLabel.Size = UDim2.new(0, 110, 0, 20)
     singleGunLabel.BackgroundTransparency = 1
     singleGunLabel.Text = "🟣 [떨어진 총]"
-    singleGunLabel.TextColor3 = Color3.fromRGB(180, 50, 255)
+    singleGunLabel.TextColor3 = Color3.fromRGB(200, 100, 255)
     singleGunLabel.Font = Enum.Font.GothamBold
     singleGunLabel.TextSize = 12
     singleGunLabel.Visible = false
@@ -639,8 +664,14 @@ local function LoadMurderMystery()
                         if coin.Name == "Coin_Server" then
                             local part = coin:IsA("Model") and coin.PrimaryPart or coin
                             if part and part.Transparency < 1 then
-                                myHrp.CFrame = part.CFrame
-                                task.wait(0.35)
+                                if firetouchinterest then
+                                    firetouchinterest(myHrp, part, 0)
+                                    task.wait(0.01)
+                                    firetouchinterest(myHrp, part, 1)
+                                else
+                                    myHrp.CFrame = part.CFrame
+                                end
+                                task.wait(0.2)
                             end
                         end
                     end
