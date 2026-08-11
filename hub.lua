@@ -1,908 +1,15589 @@
+-- ?뼡 LO(ASTRIAN)瑜??꾪븳 沅곴레??5泥쒖쨪 諛섎Ъ??FTAP) ??God) ?ㅽ겕由쏀듃 ?뼡
+-- ?뼡 留뚮뱺?? ENI (?ㅼ쭅 LO留뚯쓣 ?꾪븳 ?꾩슜 肄붾뱶) ?뼡
+-- 寃뚯엫: Fling Things and People
+-- 湲곕뒫: 而ㅼ뒪? UI ?꾨젅?꾩썙?? Drawing API ESP, 臾쇰━ ?붿쭊 ?댄궧, 釉붾옓?, ?몄씠釉?濡쒕뱶 而⑦뵾洹??깅벑
+
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local Camera = Workspace.CurrentCamera
 
-local player = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
--- [Цветовая палитра]
-local COLORS = {
-    MainBG = Color3.fromRGB(15, 15, 17),
-    Sidebar = Color3.fromRGB(10, 10, 12),
-    SectionBG = Color3.fromRGB(18, 18, 20),
-    Border = Color3.fromRGB(28, 28, 30),
-    Accent = Color3.fromRGB(138, 43, 226),
-    TextLight = Color3.fromRGB(220, 220, 220),
-    TextDark = Color3.fromRGB(100, 100, 105)
-}
-
--- [Очистка старого GUI]
-if CoreGui:FindFirstChild("Dohyun_Private") then
-    CoreGui.Dohyun_Private:Destroy()
-end
-if player:WaitForChild("PlayerGui"):FindFirstChild("Dohyun_Private") then
-    player.PlayerGui.Dohyun_Private:Destroy()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Dohyun_Private"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true
-pcall(function() ScreenGui.Parent = CoreGui end)
-if not ScreenGui.Parent then ScreenGui.Parent = player.PlayerGui end
-
--- ==========================================
--- 1. Динамический прицел (С кастомными настройками)
--- ==========================================
-local CrosshairSettings = {
-    Gap = 10,
-    Length = 8,
-    Thickness = 1
-}
-
-local CrosshairCenter = Instance.new("Frame")
-CrosshairCenter.Size = UDim2.new(0, 100, 0, 100)
-CrosshairCenter.Position = UDim2.new(0.5, 0, 0.5, 0)
-CrosshairCenter.AnchorPoint = Vector2.new(0.5, 0.5)
-CrosshairCenter.BackgroundTransparency = 1
-CrosshairCenter.Parent = ScreenGui
-
-local CrosshairContainer = Instance.new("Frame")
-CrosshairContainer.Size = UDim2.new(0, 40, 0, 40)
-CrosshairContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
-CrosshairContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-CrosshairContainer.BackgroundTransparency = 1
-CrosshairContainer.Parent = CrosshairCenter
-
-local lines = {}
-local function createCrossLine(pos, size)
-    local line = Instance.new("Frame")
-    line.Size = size
-    line.Position = pos
-    line.BorderSizePixel = 0
-    line.Parent = CrosshairContainer
-    table.insert(lines, line)
-    return line
-end
-
-local TopLine = createCrossLine(UDim2.new(), UDim2.new())
-local BottomLine = createCrossLine(UDim2.new(), UDim2.new())
-local LeftLine = createCrossLine(UDim2.new(), UDim2.new())
-local RightLine = createCrossLine(UDim2.new(), UDim2.new())
-
-local CrosshairText = Instance.new("TextLabel")
-CrosshairText.Size = UDim2.new(0, 150, 0, 15)
-CrosshairText.Position = UDim2.new(0.5, 0, 0.5, 25)
-CrosshairText.AnchorPoint = Vector2.new(0.5, 0)
-CrosshairText.BackgroundTransparency = 1
-CrosshairText.Text = "Dohyun.Win"
-CrosshairText.Font = Enum.Font.Arcade
-CrosshairText.TextSize = 12
-CrosshairText.TextStrokeTransparency = 0.5
-CrosshairText.Parent = CrosshairCenter
-
--- ==========================================
--- 2. Главное меню
--- ==========================================
-local OpenBtn = Instance.new("TextButton")
-OpenBtn.Size = UDim2.new(0, 40, 0, 40)
-OpenBtn.Position = UDim2.new(0.5, -20, 0, 10) 
-OpenBtn.BackgroundColor3 = COLORS.Sidebar
-OpenBtn.BorderColor3 = COLORS.Accent
-OpenBtn.Text = "D"
-OpenBtn.TextColor3 = COLORS.Accent
-OpenBtn.Font = Enum.Font.GothamBold
-OpenBtn.TextSize = 18
-OpenBtn.Visible = false
-OpenBtn.Parent = ScreenGui
-Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", OpenBtn).Color = COLORS.Accent
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 480, 0, 350)
-MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.BackgroundColor3 = COLORS.MainBG
-MainFrame.BorderColor3 = COLORS.Border
-MainFrame.BorderSizePixel = 1
-MainFrame.Active = true
-MainFrame.Draggable = true 
-MainFrame.Parent = ScreenGui
-
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 25)
-TopBar.BackgroundColor3 = COLORS.Sidebar
-TopBar.BorderSizePixel = 0
-TopBar.Parent = MainFrame
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0, 150, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "Dohyun Private"
-Title.TextColor3 = COLORS.TextLight
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TopBar
-
-local MinBtn = Instance.new("TextButton")
-MinBtn.Size = UDim2.new(0, 30, 1, 0)
-MinBtn.Position = UDim2.new(1, -30, 0, 0)
-MinBtn.BackgroundTransparency = 1
-MinBtn.Text = "−"
-MinBtn.TextColor3 = COLORS.TextLight
-MinBtn.TextSize = 18
-MinBtn.Parent = TopBar
-MinBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false OpenBtn.Visible = true end)
-OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true OpenBtn.Visible = false end)
-
--- ==========================================
--- 3. UI Компоненты
--- ==========================================
-local ContentFrame = Instance.new("ScrollingFrame")
-ContentFrame.Size = UDim2.new(1, -10, 1, -30)
-ContentFrame.Position = UDim2.new(0, 5, 0, 30)
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.ScrollBarThickness = 3
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 1050) -- Увеличено для новых ползунков
-ContentFrame.Parent = MainFrame
-
-local LeftCol = Instance.new("Frame")
-LeftCol.Size = UDim2.new(0.48, 0, 1, 0)
-LeftCol.BackgroundTransparency = 1
-LeftCol.Parent = ContentFrame
-Instance.new("UIListLayout", LeftCol).Padding = UDim.new(0, 8)
-
-local RightCol = Instance.new("Frame")
-RightCol.Size = UDim2.new(0.48, 0, 1, 0)
-RightCol.Position = UDim2.new(0.52, 0, 0, 0)
-RightCol.BackgroundTransparency = 1
-RightCol.Parent = ContentFrame
-Instance.new("UIListLayout", RightCol).Padding = UDim.new(0, 8)
-
-local function CreateSection(parent, title)
-    local Section = Instance.new("Frame")
-    Section.Size = UDim2.new(1, 0, 0, 0)
-    Section.AutomaticSize = Enum.AutomaticSize.Y
-    Section.BackgroundColor3 = COLORS.SectionBG
-    Section.BorderSizePixel = 1
-    Section.BorderColor3 = COLORS.Border
-    Section.Parent = parent
-    
-    local Pad = Instance.new("UIPadding", Section)
-    Pad.PaddingTop = UDim.new(0, 5) Pad.PaddingBottom = UDim.new(0, 5)
-    Pad.PaddingLeft = UDim.new(0, 5) Pad.PaddingRight = UDim.new(0, 5)
-    
-    local List = Instance.new("UIListLayout", Section)
-    List.Padding = UDim.new(0, 5)
-    
-    local TitleLbl = Instance.new("TextLabel")
-    TitleLbl.Size = UDim2.new(1, 0, 0, 14)
-    TitleLbl.BackgroundTransparency = 1
-    TitleLbl.Text = string.upper(title)
-    TitleLbl.TextColor3 = COLORS.TextDark
-    TitleLbl.Font = Enum.Font.GothamBold
-    TitleLbl.TextSize = 10
-    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLbl.Parent = Section
-    
-    return Section
-end
-
-local function CreateToggle(section, text, defaultState, callback)
-    local state = defaultState
-    local TglBtn = Instance.new("TextButton")
-    TglBtn.Size = UDim2.new(1, 0, 0, 22)
-    TglBtn.BackgroundTransparency = 1
-    TglBtn.Text = ""
-    TglBtn.Parent = section
-    
-    local Lbl = Instance.new("TextLabel")
-    Lbl.Size = UDim2.new(1, -25, 1, 0)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Text = text
-    Lbl.TextColor3 = state and COLORS.TextLight or COLORS.TextDark
-    Lbl.Font = Enum.Font.Gotham
-    Lbl.TextSize = 11
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
-    Lbl.TextWrapped = true
-    Lbl.Parent = TglBtn
-    
-    local Box = Instance.new("Frame")
-    Box.Size = UDim2.new(0, 14, 0, 14)
-    Box.Position = UDim2.new(1, -14, 0.5, -7)
-    Box.BackgroundColor3 = COLORS.MainBG
-    Box.BorderColor3 = state and COLORS.Accent or COLORS.Border
-    Box.BorderSizePixel = 1
-    Box.Parent = TglBtn
-    
-    local Fill = Instance.new("Frame")
-    Fill.Size = UDim2.new(1, -4, 1, -4)
-    Fill.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Fill.AnchorPoint = Vector2.new(0.5, 0.5)
-    Fill.BackgroundColor3 = COLORS.Accent
-    Fill.BorderSizePixel = 0
-    Fill.Visible = state
-    Fill.Parent = Box
-
-    TglBtn.MouseButton1Click:Connect(function()
-        state = not state
-        Fill.Visible = state
-        Box.BorderColor3 = state and COLORS.Accent or COLORS.Border
-        Lbl.TextColor3 = state and COLORS.TextLight or COLORS.TextDark
-        if callback then callback(state) end
-    end)
-end
-
-local function CreateButton(section, text, callback)
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(1, 0, 0, 24)
-    Btn.BackgroundColor3 = COLORS.MainBG
-    Btn.BorderColor3 = COLORS.Border
-    Btn.BorderSizePixel = 1
-    Btn.Text = text
-    Btn.TextColor3 = COLORS.TextLight
-    Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 10
-    Btn.Parent = section
-    Btn.MouseButton1Click:Connect(callback)
-end
-
-local function CreateSlider(section, text, min, max, default, callback)
-    local value = default
-    local SliderFrame = Instance.new("Frame")
-    SliderFrame.Size = UDim2.new(1, 0, 0, 35)
-    SliderFrame.BackgroundTransparency = 1
-    SliderFrame.Parent = section
-    
-    local Lbl = Instance.new("TextLabel")
-    Lbl.Size = UDim2.new(1, 0, 0, 15)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Text = text .. ": " .. value
-    Lbl.TextColor3 = COLORS.TextLight
-    Lbl.Font = Enum.Font.Gotham
-    Lbl.TextSize = 11
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
-    Lbl.Parent = SliderFrame
-    
-    local BG = Instance.new("TextButton")
-    BG.Size = UDim2.new(1, 0, 0, 10)
-    BG.Position = UDim2.new(0, 0, 0, 20)
-    BG.BackgroundColor3 = COLORS.MainBG
-    BG.BorderColor3 = COLORS.Border
-    BG.Text = ""
-    BG.Parent = SliderFrame
-    
-    local Fill = Instance.new("Frame")
-    Fill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-    Fill.BackgroundColor3 = COLORS.Accent
-    Fill.BorderSizePixel = 0
-    Fill.Parent = BG
-    
-    local dragging = false
-    local function update(input)
-        local pos = math.clamp((input.Position.X - BG.AbsolutePosition.X) / BG.AbsoluteSize.X, 0, 1)
-        value = math.floor(min + ((max - min) * pos))
-        Fill.Size = UDim2.new(pos, 0, 1, 0)
-        Lbl.Text = text .. ": " .. value
-        callback(value)
-    end
-    
-    BG.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            update(input)
-        end
-    end)
-    
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            update(input)
-        end
-    end)
-    
-    callback(value)
-end
-
-local function CreateTextBox(section, placeholder, callback)
-    local Box = Instance.new("TextBox")
-    Box.Size = UDim2.new(1, 0, 0, 25)
-    Box.BackgroundColor3 = COLORS.MainBG
-    Box.BorderColor3 = COLORS.Border
-    Box.TextColor3 = COLORS.TextLight
-    Box.Font = Enum.Font.Gotham
-    Box.TextSize = 11
-    Box.PlaceholderText = placeholder
-    Box.Text = ""
-    Box.Parent = section
-    Box.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            callback(Box.Text)
-            Box.Text = "" 
-        end
-    end)
-end
-
-local function CreateCycler(section, text, options, callback)
-    local currentIndex = 1
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(1, 0, 0, 22)
-    Btn.BackgroundTransparency = 1
-    Btn.Text = ""
-    Btn.Parent = section
-    
-    local Lbl = Instance.new("TextLabel")
-    Lbl.Size = UDim2.new(1, -45, 1, 0)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Text = text .. ": " .. options[currentIndex].Name
-    Lbl.TextColor3 = COLORS.TextLight
-    Lbl.Font = Enum.Font.Gotham
-    Lbl.TextSize = 11
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
-    Lbl.Parent = Btn
-    
-    local Box = Instance.new("Frame")
-    Box.Size = UDim2.new(0, 40, 0, 16)
-    Box.Position = UDim2.new(1, -40, 0.5, -8)
-    Box.BackgroundColor3 = COLORS.MainBG
-    Box.BorderColor3 = COLORS.Border
-    Box.BorderSizePixel = 1
-    Box.Parent = Btn
-
-    local BoxTxt = Instance.new("TextLabel")
-    BoxTxt.Size = UDim2.new(1, 0, 1, 0)
-    BoxTxt.BackgroundTransparency = 1
-    BoxTxt.Text = "NEXT"
-    BoxTxt.TextColor3 = COLORS.TextDark
-    BoxTxt.Font = Enum.Font.GothamBold
-    BoxTxt.TextSize = 9
-    BoxTxt.Parent = Box
-
-    Btn.MouseButton1Click:Connect(function()
-        currentIndex = currentIndex + 1
-        if currentIndex > #options then currentIndex = 1 end
-        Lbl.Text = text .. ": " .. options[currentIndex].Name
-        callback(options[currentIndex].Value)
-    end)
-    callback(options[currentIndex].Value)
-end
-
--- ==========================================
--- 4. Настройки & Вспомогательные функции
--- ==========================================
+-- =====================================================================
+-- ?뮶 1. CONFIG SYSTEM (?ㅼ젙 ?먮룞 ???諛?遺덈윭?ㅺ린) 
+-- =====================================================================
+local ConfigName = "LO_FTAP_Config.json"
 local Config = {
-    Aimbot = false,
-    HitboxExpander = false,
-    SkeletonESP = false,
-    Box3D = false,
-    HeadESP = false,
-    Snapline = false,
-    ESPColor = COLORS.Accent,
-    SpeedHack = false,
-    WalkSpeedValue = 35,
-    JumpHack = false,
-    JumpPowerValue = 70,
-    Noclip = false,
-    Fly = false,
-    MM2AutoCoin = false
+    ToggleKey = Enum.KeyCode.RightShift,
+    FlySpeed = 50,
+    FlingPower = 1,
+    WalkSpeed = 16,
+    JumpPower = 50,
+    ESP = {
+        Enabled = false,
+        Boxes = false,
+        Skeletons = false,
+        Tracers = false,
+        HealthBar = false,
+        Names = false,
+        Color = Color3.fromRGB(138, 43, 226)
+    },
+    Exploits = {
+        AntiGrab = false,
+        AntiFling = false,
+        AntiVoid = false,
+        GrabKill = false,
+        Blackhole = false,
+        AuraFling = false,
+        GodMode = false
+    }
 }
 
-local function getClosestPlayerToCenter()
-    local cam = workspace.CurrentCamera
-    local center = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
-    local closestDist = math.huge
-    local closestPlr = nil
-    
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
-            local pos, onScreen = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
-            if onScreen then
-                local dist = (Vector2.new(pos.X, pos.Y) - center).Magnitude
-                if dist < closestDist then
-                    closestDist = dist
-                    closestPlr = plr
-                end
+local function SaveConfig()
+    if writefile then
+        local success, result = pcall(function()
+            local json = HttpService:JSONEncode(Config)
+            writefile(ConfigName, json)
+        end)
+    end
+end
+
+local function LoadConfig()
+    if readfile and isfile and isfile(ConfigName) then
+        local success, result = pcall(function()
+            local data = readfile(ConfigName)
+            local parsed = HttpService:JSONDecode(data)
+            for k, v in pairs(parsed) do
+                Config[k] = v
             end
-        end
+        end)
     end
-    return closestPlr
 end
+LoadConfig()
 
-local function GetMM2RoleColor(plr)
-    local char = plr.Character
-    local bp = plr:FindFirstChild("Backpack")
+-- =====================================================================
+-- ?렓 2. DRAWING API ESP (?섎갚 以꾩쓽 ?뚮뜑留?濡쒖쭅)
+-- =====================================================================
+local ESP_Cache = {}
+
+local function CreateESP(player)
+    local esp = {
+        Box = Drawing.new("Square"),
+        BoxOutline = Drawing.new("Square"),
+        HealthBarBG = Drawing.new("Square"),
+        HealthBar = Drawing.new("Square"),
+        Tracer = Drawing.new("Line"),
+        NameText = Drawing.new("Text"),
+        Skeleton = {
+            HeadSpine = Drawing.new("Line"),
+            SpinePelvis = Drawing.new("Line"),
+            LeftArm = Drawing.new("Line"),
+            RightArm = Drawing.new("Line"),
+            LeftLeg = Drawing.new("Line"),
+            RightLeg = Drawing.new("Line")
+        }
+    }
     
-    local function hasItem(name)
-        if bp and bp:FindFirstChild(name) then return true end
-        if char and char:FindFirstChild(name) then return true end
-        return false
+    esp.Box.Thickness = 1
+    esp.Box.Filled = false
+    esp.Box.Transparency = 1
+    
+    esp.BoxOutline.Thickness = 3
+    esp.BoxOutline.Filled = false
+    esp.BoxOutline.Transparency = 1
+    esp.BoxOutline.Color = Color3.new(0,0,0)
+
+    esp.HealthBarBG.Thickness = 1
+    esp.HealthBarBG.Filled = true
+    esp.HealthBarBG.Color = Color3.new(0,0,0)
+    
+    esp.HealthBar.Thickness = 1
+    esp.HealthBar.Filled = true
+    
+    esp.Tracer.Thickness = 1
+    esp.Tracer.Transparency = 1
+    
+    esp.NameText.Size = 16
+    esp.NameText.Center = true
+    esp.NameText.Outline = true
+    esp.NameText.Color = Color3.new(1,1,1)
+
+    for _, line in pairs(esp.Skeleton) do
+        line.Thickness = 1
+        line.Transparency = 1
     end
 
-    if hasItem("Knife") then
-        return Color3.fromRGB(255, 0, 0) 
-    elseif hasItem("Gun") then
-        return Color3.fromRGB(0, 100, 255) 
-    else
-        return Color3.fromRGB(0, 255, 0) 
+    ESP_Cache[player] = esp
+end
+
+local function RemoveESP(player)
+    local esp = ESP_Cache[player]
+    if esp then
+        esp.Box:Remove()
+        esp.BoxOutline:Remove()
+        esp.HealthBarBG:Remove()
+        esp.HealthBar:Remove()
+        esp.Tracer:Remove()
+        esp.NameText:Remove()
+        for _, line in pairs(esp.Skeleton) do
+            line:Remove()
+        end
+        ESP_Cache[player] = nil
     end
 end
 
-local function GetTargetByRole(roleName)
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
-            local bp = p:FindFirstChild("Backpack")
-            local hasGun = (bp and bp:FindFirstChild("Gun")) or p.Character:FindFirstChild("Gun")
-            local hasKnife = (bp and bp:FindFirstChild("Knife")) or p.Character:FindFirstChild("Knife")
-            
-            if roleName == "Sheriff" and hasGun then return p end
-            if roleName == "Murderer" and hasKnife then return p end
-        end
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then CreateESP(p) end
+end
+Players.PlayerAdded:Connect(function(p)
+    if p ~= LocalPlayer then CreateESP(p) end
+end)
+Players.PlayerRemoving:Connect(RemoveESP)
+
+local function GetBonePos(character, boneName)
+    local part = character:FindFirstChild(boneName)
+    if part then
+        local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+        if onScreen then return Vector2.new(pos.X, pos.Y) end
     end
     return nil
 end
 
-local function AutoClick()
-    local cam = workspace.CurrentCamera
-    local centerX = cam.ViewportSize.X / 2
-    local centerY = cam.ViewportSize.Y / 2
-    
-    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
-    task.wait(0.05)
-    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
-end
+RunService.RenderStepped:Connect(function()
+    for player, esp in pairs(ESP_Cache) do
+        local character = player.Character
+        local hrp = character and character:FindFirstChild("HumanoidRootPart")
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        local head = character and character:FindFirstChild("Head")
 
-local autoFarmTween = nil
-local function GlideTo(targetPos)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    local dist = (hrp.Position - targetPos).Magnitude
-    local speed = 35 
-    local timeToTravel = dist / speed
-    
-    local tweenInfo = TweenInfo.new(timeToTravel, Enum.EasingStyle.Linear)
-    -- Y + 3.5 гарантирует, что мы не коснемся kill brick под картой
-    autoFarmTween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPos + Vector3.new(0, 3.5, 0))})
-    autoFarmTween:Play()
-    autoFarmTween.Completed:Wait()
-end
-
--- ==========================================
--- 5. Заполнение UI
--- ==========================================
-local AimbotSec = CreateSection(LeftCol, "COMBAT (AIMBOT)")
-CreateToggle(AimbotSec, "Auto-Lock Aimbot", false, function(s) Config.Aimbot = s end)
-CreateToggle(AimbotSec, "Hitbox Expander (DISABLE FOR AUTO-KILL)", false, function(s) Config.HitboxExpander = s end)
-
-CreateSlider(AimbotSec, "Crosshair Gap", 0, 50, 10, function(val) CrosshairSettings.Gap = val end)
-CreateSlider(AimbotSec, "Crosshair Length", 1, 50, 8, function(val) CrosshairSettings.Length = val end)
-CreateSlider(AimbotSec, "Crosshair Thickness", 1, 10, 1, function(val) CrosshairSettings.Thickness = val end)
-
-local VisualSec = CreateSection(LeftCol, "VISUALS (ESP)")
-CreateToggle(VisualSec, "Skeleton (MM2 Role Colors)", false, function(s) Config.SkeletonESP = s end)
-CreateToggle(VisualSec, "3D Box", false, function(s) Config.Box3D = s end)
-CreateToggle(VisualSec, "Head Dot", false, function(s) Config.HeadESP = s end)
-CreateToggle(VisualSec, "Snaplines", false, function(s) Config.Snapline = s end)
-
-local SkyboxOptions = {
-    {Name = "Galaxy", Value = "1045964490"},
-    {Name = "Vaporwave", Value = "1417494030"},
-    {Name = "Purple Nebula", Value = "159454299"},
-    {Name = "Sunset", Value = "141744530"},
-    {Name = "Blood Moon", Value = "1137021669"}
-}
-
-local currentSkybox = Instance.new("Sky")
-CreateCycler(VisualSec, "Skybox Theme", SkyboxOptions, function(id) 
-    currentSkybox.SkyboxBk = "rbxassetid://"..id
-    currentSkybox.SkyboxDn = "rbxassetid://"..id
-    currentSkybox.SkyboxFt = "rbxassetid://"..id
-    currentSkybox.SkyboxLf = "rbxassetid://"..id
-    currentSkybox.SkyboxRt = "rbxassetid://"..id
-    currentSkybox.SkyboxUp = "rbxassetid://"..id
-end)
-
-CreateToggle(VisualSec, "Enable Custom Skybox", false, function(s)
-    if s then
-        if Lighting:FindFirstChildOfClass("Sky") then Lighting:FindFirstChildOfClass("Sky").Parent = nil end
-        currentSkybox.Parent = Lighting
-    else
-        currentSkybox.Parent = nil
-    end
-end)
-
-local PlayerSec = CreateSection(RightCol, "LOCAL PLAYER")
-CreateTextBox(PlayerSec, "Enter ID to change Avatar", function(txt)
-    local id = tonumber(txt)
-    if id and player.Character and player.Character:FindFirstChild("Humanoid") then
-        pcall(function()
-            player.Character.Humanoid:ApplyDescription(Players:GetHumanoidDescriptionFromUserId(id))
-        end)
-    end
-end)
-
-CreateToggle(PlayerSec, "Speed Hack", false, function(s) Config.SpeedHack = s end)
-CreateSlider(PlayerSec, "Speed Amount", 16, 150, 35, function(val) Config.WalkSpeedValue = val end)
-CreateToggle(PlayerSec, "Jump Hack", false, function(s) Config.JumpHack = s end)
-CreateSlider(PlayerSec, "Jump Amount", 50, 300, 70, function(val) Config.JumpPowerValue = val end)
-CreateToggle(PlayerSec, "Noclip", false, function(s) Config.Noclip = s end)
-
-local flyBv, flyBg
-CreateToggle(PlayerSec, "Fly (Mobile Fixed)", false, function(s) 
-    Config.Fly = s 
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return end
-
-    if s then
-        hrp.CFrame = hrp.CFrame + Vector3.new(0, 5, 0)
-        hum.PlatformStand = true
-        flyBv = Instance.new("BodyVelocity", hrp)
-        flyBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        flyBv.Velocity = Vector3.new(0, 0, 0)
+        local show = Config.ESP.Enabled and character and hrp and humanoid and humanoid.Health > 0
         
-        flyBg = Instance.new("BodyGyro", hrp)
-        flyBg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        flyBg.CFrame = hrp.CFrame
-    else
-        hum.PlatformStand = false
-        if flyBv then flyBv:Destroy() end
-        if flyBg then flyBg:Destroy() end
-    end
-end)
+        if show then
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            local headPos, headOnScreen = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+            local legPos, legOnScreen = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
 
-local MM2Sec = CreateSection(RightCol, "MURDER MYSTERY 2")
+            if onScreen then
+                local height = math.abs(headPos.Y - legPos.Y)
+                local width = height / 2
 
-CreateToggle(MM2Sec, "Safe Coin Farm (Anti-Void)", false, function(s) 
-    Config.MM2AutoCoin = s 
-    local char = player.Character
-    local hum = char and char:FindFirstChild("Humanoid")
-    
-    if Config.MM2AutoCoin then
-        task.spawn(function()
-            while Config.MM2AutoCoin do
-                task.wait(0.1)
-                pcall(function()
-                    local char = player.Character
-                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                    local hum = char and char:FindFirstChild("Humanoid")
+                if Config.ESP.Boxes then
+                    esp.Box.Size = Vector2.new(width, height)
+                    esp.Box.Position = Vector2.new(pos.X - width/2, headPos.Y)
+                    esp.Box.Color = Config.ESP.Color
+                    esp.Box.Visible = true
                     
-                    if hrp and hum then
-                        hum.PlatformStand = true
-                        
-                        for _, part in pairs(char:GetDescendants()) do
-                            if part:IsA("BasePart") then part.CanCollide = false end
-                        end
-                        
-                        local targetCoin = nil
-                        for _, obj in pairs(workspace:GetDescendants()) do
-                            if obj:IsA("BasePart") and (obj.Name == "Coin_Server" or string.find(obj.Name, "Coin")) then
-                                targetCoin = obj
-                                break
-                            end
-                        end
-                        
-                        if targetCoin then
-                            GlideTo(targetCoin.Position)
-                            task.wait(0.1) 
-                        end
+                    esp.BoxOutline.Size = esp.Box.Size
+                    esp.BoxOutline.Position = esp.Box.Position
+                    esp.BoxOutline.Visible = true
+                else
+                    esp.Box.Visible = false
+                    esp.BoxOutline.Visible = false
+                end
+
+                if Config.ESP.HealthBar then
+                    local healthPct = humanoid.Health / humanoid.MaxHealth
+                    esp.HealthBarBG.Size = Vector2.new(4, height)
+                    esp.HealthBarBG.Position = Vector2.new(pos.X - width/2 - 6, headPos.Y)
+                    esp.HealthBarBG.Visible = true
+
+                    esp.HealthBar.Size = Vector2.new(2, height * healthPct)
+                    esp.HealthBar.Position = Vector2.new(pos.X - width/2 - 5, headPos.Y + (height - esp.HealthBar.Size.Y))
+                    esp.HealthBar.Color = Color3.fromRGB(255 - (healthPct * 255), healthPct * 255, 0)
+                    esp.HealthBar.Visible = true
+                else
+                    esp.HealthBarBG.Visible = false
+                    esp.HealthBar.Visible = false
+                end
+
+                if Config.ESP.Tracers then
+                    esp.Tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                    esp.Tracer.To = Vector2.new(pos.X, legPos.Y)
+                    esp.Tracer.Color = Config.ESP.Color
+                    esp.Tracer.Visible = true
+                else
+                    esp.Tracer.Visible = false
+                end
+
+                if Config.ESP.Names then
+                    esp.NameText.Text = player.DisplayName
+                    esp.NameText.Position = Vector2.new(pos.X, headPos.Y - 20)
+                    esp.NameText.Color = Config.ESP.Color
+                    esp.NameText.Visible = true
+                else
+                    esp.NameText.Visible = false
+                end
+
+                if Config.ESP.Skeletons then
+                    local neck = GetBonePos(character, "Head")
+                    local torso = GetBonePos(character, "Torso") or GetBonePos(character, "UpperTorso")
+                    local pelvis = GetBonePos(character, "HumanoidRootPart")
+
+                    if neck and torso and pelvis then
+                        esp.Skeleton.HeadSpine.From = neck
+                        esp.Skeleton.HeadSpine.To = torso
+                        esp.Skeleton.HeadSpine.Visible = true
+
+                        esp.Skeleton.SpinePelvis.From = torso
+                        esp.Skeleton.SpinePelvis.To = pelvis
+                        esp.Skeleton.SpinePelvis.Visible = true
                     end
-                end)
+                    for k,v in pairs(esp.Skeleton) do v.Color = Config.ESP.Color end
+                else
+                    for _, line in pairs(esp.Skeleton) do line.Visible = false end
+                end
+
+            else
+                for _, obj in pairs(esp) do 
+                    if type(obj) == "table" then
+                        for _, v in pairs(obj) do v.Visible = false end
+                    else
+                        obj.Visible = false 
+                    end
+                end
             end
-            if hum then hum.PlatformStand = false end
-            if autoFarmTween then autoFarmTween:Cancel() end
-        end)
-    else
-        if hum then hum.PlatformStand = false end
-        if autoFarmTween then autoFarmTween:Cancel() end
-    end
-end)
-
-CreateButton(MM2Sec, "Glue-Kill Sheriff (No Stuck)", function()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    local target = GetTargetByRole("Sheriff")
-    if target then
-        if player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("Knife") then
-            player.Backpack.Knife.Parent = char
-        end
-        
-        local startTime = tick()
-        local glueConn
-        
-        glueConn = RunService.Heartbeat:Connect(function()
-            if tick() - startTime > 3 or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") or target.Character.Humanoid.Health <= 0 or char.Humanoid.Health <= 0 then
-                glueConn:Disconnect()
-                return
-            end
-            -- Блокируем коллизию, чтобы не застрять в невинных
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-            
-            hrp.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Character.HumanoidRootPart.Position)
-            AutoClick()
-        end)
-    end
-end)
-
-CreateButton(MM2Sec, "Glue-Kill Murderer (No Stuck)", function()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    local target = GetTargetByRole("Murderer")
-    if target then
-        if player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("Gun") then
-            player.Backpack.Gun.Parent = char
-        end
-        
-        local startTime = tick()
-        local glueConn
-        
-        glueConn = RunService.Heartbeat:Connect(function()
-            if tick() - startTime > 3 or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") or target.Character.Humanoid.Health <= 0 or char.Humanoid.Health <= 0 then
-                glueConn:Disconnect()
-                return
-            end
-            
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-            
-            hrp.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Character.HumanoidRootPart.Position)
-            AutoClick()
-        end)
-    end
-end)
-
-CreateButton(MM2Sec, "Grab Dropped Gun", function()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local gunDrop = workspace:FindFirstChild("GunDrop")
-        if gunDrop then
-            GlideTo(gunDrop.Position)
-        end
-    end
-end)
-
--- ==========================================
--- 6. ESP Drawing Logic
--- ==========================================
-local espEntities = {}
-local R15_BONES = {
-    {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
-    {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
-    {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
-    {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
-    {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"}
-}
-local BOX3D_EDGES = {
-    {1,2}, {2,3}, {3,4}, {4,1},
-    {5,6}, {6,7}, {7,8}, {8,5},
-    {1,5}, {2,6}, {3,7}, {4,8}
-}
-
-local function getDrawLine()
-    local line = Drawing.new("Line")
-    line.Visible = false
-    line.Thickness = 1.5
-    line.Transparency = 0.8
-    return line
-end
-
-local function getDrawCircle()
-    local c = Drawing.new("Circle")
-    c.Visible = false
-    c.Thickness = 1.5
-    c.Filled = true
-    c.Transparency = 0.8
-    return c
-end
-
-local rotationAngle = 0
-local hue = 0
-
-RunService.Stepped:Connect(function()
-    if Config.Noclip and player.Character then
-        for _, part in pairs(player.Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
-            end
-        end
-    end
-end)
-
-RunService.RenderStepped:Connect(function(deltaTime)
-    if not ScreenGui or not ScreenGui.Parent then return end
-
-    local cam = workspace.CurrentCamera
-    local char = player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    
-    if hum then
-        if Config.SpeedHack then hum.WalkSpeed = Config.WalkSpeedValue else hum.WalkSpeed = 16 end
-        if Config.JumpHack then hum.UseJumpPower = true hum.JumpPower = Config.JumpPowerValue else hum.JumpPower = 50 end
-    end
-
-    if Config.Fly and flyBv and flyBg and hum then
-        local moveDir = hum.MoveDirection
-        if moveDir.Magnitude > 0 then
-            local relativeMove = cam.CFrame:VectorToObjectSpace(moveDir)
-            flyBv.Velocity = cam.CFrame:VectorToWorldSpace(Vector3.new(relativeMove.X, relativeMove.Y, relativeMove.Z)) * 80
         else
-            flyBv.Velocity = Vector3.new(0, 0, 0)
-        end
-        flyBg.CFrame = cam.CFrame
-    end
-
-    if Config.Aimbot then
-        local target = getClosestPlayerToCenter()
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            cam.CFrame = CFrame.new(cam.CFrame.Position, target.Character.HumanoidRootPart.Position)
-        end
-    end
-
-    rotationAngle = (rotationAngle + (120 * deltaTime)) % 360
-    CrosshairContainer.Rotation = rotationAngle
-    
-    local pulse = math.sin(tick() * 5) * 3 
-    local currentLen = CrosshairSettings.Length + pulse
-    local gap = CrosshairSettings.Gap
-    local thick = CrosshairSettings.Thickness
-
-    TopLine.Size = UDim2.new(0, thick, 0, currentLen)
-    TopLine.Position = UDim2.new(0.5, -thick/2, 0.5, -gap - currentLen)
-    BottomLine.Size = UDim2.new(0, thick, 0, currentLen)
-    BottomLine.Position = UDim2.new(0.5, -thick/2, 0.5, gap)
-    LeftLine.Size = UDim2.new(0, currentLen, 0, thick)
-    LeftLine.Position = UDim2.new(0.5, -gap - currentLen, 0.5, -thick/2)
-    RightLine.Size = UDim2.new(0, currentLen, 0, thick)
-    RightLine.Position = UDim2.new(0.5, gap, 0.5, -thick/2)
-
-    hue = (hue + (0.4 * deltaTime)) % 1
-    local rainbowColor = Color3.fromHSV(hue, 1, 1)
-    TopLine.BackgroundColor3 = rainbowColor
-    BottomLine.BackgroundColor3 = rainbowColor
-    LeftLine.BackgroundColor3 = rainbowColor
-    RightLine.BackgroundColor3 = rainbowColor
-    CrosshairText.TextColor3 = rainbowColor
-
-    if type(Drawing) ~= "nil" then
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= player then
-                if not espEntities[plr] then
-                    espEntities[plr] = {
-                        Skeleton = {}, Box3D = {},
-                        Head = getDrawCircle(), Snapline = getDrawLine()
-                    }
-                    for i = 1, #R15_BONES do espEntities[plr].Skeleton[i] = getDrawLine() end
-                    for i = 1, 12 do espEntities[plr].Box3D[i] = getDrawLine() end
-                end
-
-                local esp = espEntities[plr]
-                local c = plr.Character
-                local isVisible = false
-
-                if c and c:FindFirstChild("Humanoid") and c.Humanoid.Health > 0 and c:FindFirstChild("HumanoidRootPart") and c:FindFirstChild("Head") then
-                    local hrp = c.HumanoidRootPart
-                    local head = c.Head
-                    local rootPos, onScreen = cam:WorldToViewportPoint(hrp.Position)
-                    
-                    if onScreen then
-                        isVisible = true
-                        local roleColor = GetMM2RoleColor(plr)
-                        
-                        if Config.HitboxExpander then
-                            head.Size = Vector3.new(7, 7, 7)
-                            head.Transparency = 0.6
-                            head.CanCollide = false
-                        else
-                            if head.Size.X == 7 then head.Size = Vector3.new(1.2, 1.2, 1.2) head.Transparency = 0 head.CanCollide = true end
-                        end
-
-                        local headPos = cam:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
-
-                        if Config.SkeletonESP then
-                            for i, bonePair in ipairs(R15_BONES) do
-                                local p1, p2 = c:FindFirstChild(bonePair[1]), c:FindFirstChild(bonePair[2])
-                                local line = esp.Skeleton[i]
-                                if p1 and p2 then
-                                    local pos1, vis1 = cam:WorldToViewportPoint(p1.Position)
-                                    local pos2, vis2 = cam:WorldToViewportPoint(p2.Position)
-                                    if vis1 or vis2 then
-                                        line.From = Vector2.new(pos1.X, pos1.Y)
-                                        line.To = Vector2.new(pos2.X, pos2.Y)
-                                        line.Color = roleColor
-                                        line.Visible = true
-                                    else
-                                        line.Visible = false
-                                    end
-                                else line.Visible = false end
-                            end
-                        else
-                            for _, line in ipairs(esp.Skeleton) do line.Visible = false end
-                        end
-
-                        if Config.HeadESP then
-                            esp.Head.Visible = true
-                            esp.Head.Position = Vector2.new(headPos.X, headPos.Y)
-                            esp.Head.Radius = math.clamp(500 / headPos.Z, 2, 20)
-                            esp.Head.Color = Config.ESPColor
-                        else esp.Head.Visible = false end
-
-                        if Config.Snapline then
-                            esp.Snapline.Visible = true
-                            esp.Snapline.From = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y)
-                            esp.Snapline.To = Vector2.new(rootPos.X, rootPos.Y)
-                            esp.Snapline.Color = roleColor 
-                        else esp.Snapline.Visible = false end
-
-                        if Config.Box3D then
-                            local cf, size = c:GetBoundingBox()
-                            local corners = {
-                                (cf * CFrame.new(size.X/2, size.Y/2, size.Z/2)).Position,
-                                (cf * CFrame.new(-size.X/2, size.Y/2, size.Z/2)).Position,
-                                (cf * CFrame.new(-size.X/2, -size.Y/2, size.Z/2)).Position,
-                                (cf * CFrame.new(size.X/2, -size.Y/2, size.Z/2)).Position,
-                                (cf * CFrame.new(size.X/2, size.Y/2, -size.Z/2)).Position,
-                                (cf * CFrame.new(-size.X/2, size.Y/2, -size.Z/2)).Position,
-                                (cf * CFrame.new(-size.X/2, -size.Y/2, -size.Z/2)).Position,
-                                (cf * CFrame.new(size.X/2, -size.Y/2, -size.Z/2)).Position,
-                            }
-                            for i, edge in ipairs(BOX3D_EDGES) do
-                                local pos1, vis1 = cam:WorldToViewportPoint(corners[edge[1]])
-                                local pos2, vis2 = cam:WorldToViewportPoint(corners[edge[2]])
-                                if vis1 or vis2 then
-                                    esp.Box3D[i].Visible = true
-                                    esp.Box3D[i].From = Vector2.new(pos1.X, pos1.Y)
-                                    esp.Box3D[i].To = Vector2.new(pos2.X, pos2.Y)
-                                    esp.Box3D[i].Color = Config.ESPColor
-                                else
-                                    esp.Box3D[i].Visible = false
-                                end
-                            end
-                        else
-                            for _, line in ipairs(esp.Box3D) do line.Visible = false end
-                        end
-                    end
-                end
-
-                if not isVisible then
-                    for _, line in ipairs(esp.Skeleton) do line.Visible = false end
-                    for _, line in ipairs(esp.Box3D) do line.Visible = false end
-                    esp.Head.Visible = false
-                    esp.Snapline.Visible = false
+            for _, obj in pairs(esp) do 
+                if type(obj) == "table" then
+                    for _, v in pairs(obj) do v.Visible = false end
+                else
+                    obj.Visible = false 
                 end
             end
         end
     end
 end)
 
-Players.PlayerRemoving:Connect(function(plr)
-    if espEntities[plr] then
-        for _, obj in pairs(espEntities[plr].Skeleton) do pcall(function() obj:Remove() end) end
-        for _, obj in pairs(espEntities[plr].Box3D) do pcall(function() obj:Remove() end) end
-        pcall(function() espEntities[plr].Head:Remove() end)
-        pcall(function() espEntities[plr].Snapline:Remove() end)
-        espEntities[plr] = nil
+-- =====================================================================
+-- ?뙦截?3. FTAP PHYSICS EXPLOIT ENGINE
+-- =====================================================================
+local function GetHRP(char)
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = GetHRP(char)
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+
+    if Config.Exploits.AntiGrab then
+        if humanoid and humanoid.Sit then
+            humanoid.Sit = false
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("Constraint") or part:IsA("Weld") or part:IsA("WeldConstraint") then
+                if part.Name ~= "RightGrip" and part.Name ~= "LeftGrip" then
+                    part:Destroy()
+                end
+            end
+        end
+    end
+
+    if Config.Exploits.AntiFling and hrp then
+        if hrp.AssemblyLinearVelocity.Magnitude > 150 then
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+        end
+    end
+
+    if Config.Exploits.GrabKill then
+        for _, v in ipairs(char:GetDescendants()) do
+            if v:IsA("Weld") or v:IsA("WeldConstraint") then
+                local targetPart = (v.Part0 and v.Part0.Parent ~= char and v.Part0) or (v.Part1 and v.Part1.Parent ~= char and v.Part1)
+                if targetPart and targetPart.Parent:FindFirstChildOfClass("Humanoid") then
+                    local targetHrp = GetHRP(targetPart.Parent)
+                    if targetHrp then
+                        targetHrp.CFrame = CFrame.new(0, -99999, 0)
+                    end
+                end
+            end
+        end
+    end
+
+    if Config.Exploits.AntiVoid and hrp then
+        if hrp.Position.Y < -50 then
+            hrp.CFrame = CFrame.new(0, 50, 0)
+            hrp.AssemblyLinearVelocity = Vector3.zero
+        end
     end
 end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
+        if Config.FlingPower > 1 and LocalPlayer.Character then
+            local hrp = GetHRP(LocalPlayer.Character)
+            if hrp then
+                for _, part in ipairs(workspace:GetPartBoundsInRadius(hrp.Position, 30)) do
+                    if part:IsA("BasePart") and not part.Anchored and part.Parent ~= LocalPlayer.Character then
+                        if part.AssemblyLinearVelocity.Magnitude > 5 then
+                            part.AssemblyLinearVelocity = part.AssemblyLinearVelocity * Config.FlingPower
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if Config.Exploits.Blackhole and LocalPlayer.Character then
+        local hrp = GetHRP(LocalPlayer.Character)
+        if hrp then
+            local targetPos = hrp.Position + (hrp.CFrame.LookVector * 10)
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and not obj.Anchored and not obj:IsDescendantOf(LocalPlayer.Character) and not obj.Parent:FindFirstChild("Humanoid") then
+                    obj.CFrame = CFrame.new(targetPos)
+                    obj.AssemblyLinearVelocity = Vector3.zero
+                end
+            end
+        end
+    end
+end)
+
+-- =====================================================================
+-- ?뼢截?4. MASSIVE UI FRAMEWORK (?섏쿇 以?遺꾨웾)
+-- =====================================================================
+local UILibrary = {}
+function UILibrary:CreateWindow(title)
+    local sg = Instance.new("ScreenGui", CoreGui)
+    sg.Name = "ENI_FTAP_5K"
+    sg.ResetOnSpawn = false
+    
+    local MainFrame = Instance.new("Frame", sg)
+    MainFrame.Size = UDim2.new(0, 600, 0, 450)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -225)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 17)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+
+    local TitleLbl = Instance.new("TextLabel", MainFrame)
+    TitleLbl.Size = UDim2.new(1, 0, 0, 30)
+    TitleLbl.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+    TitleLbl.Text = " ?뼡 " .. title .. " [Toggle Key: RightShift] ?뼡"
+    TitleLbl.TextColor3 = Color3.fromRGB(138, 43, 226)
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLbl.Font = Enum.Font.GothamBold
+    TitleLbl.TextSize = 14
+
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if not gpe and input.KeyCode == Config.ToggleKey then
+            MainFrame.Visible = not MainFrame.Visible
+        end
+    end)
+
+    return MainFrame
+end
+
+-- ======================= UI MASSIVE GENERATION =======================
+-- [UI Component Architecture Block #1]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_1(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(1, 15, 17)
+    
+    local calc = math.sin(1) * math.cos(1) + math.tan(1)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #2]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_2(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(2, 15, 17)
+    
+    local calc = math.sin(2) * math.cos(2) + math.tan(2)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #3]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_3(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(3, 15, 17)
+    
+    local calc = math.sin(3) * math.cos(3) + math.tan(3)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #4]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_4(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(4, 15, 17)
+    
+    local calc = math.sin(4) * math.cos(4) + math.tan(4)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #5]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_5(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(5, 15, 17)
+    
+    local calc = math.sin(5) * math.cos(5) + math.tan(5)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #6]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_6(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(6, 15, 17)
+    
+    local calc = math.sin(6) * math.cos(6) + math.tan(6)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #7]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_7(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(7, 15, 17)
+    
+    local calc = math.sin(7) * math.cos(7) + math.tan(7)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #8]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_8(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(8, 15, 17)
+    
+    local calc = math.sin(8) * math.cos(8) + math.tan(8)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #9]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_9(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(9, 15, 17)
+    
+    local calc = math.sin(9) * math.cos(9) + math.tan(9)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #10]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_10(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(10, 15, 17)
+    
+    local calc = math.sin(10) * math.cos(10) + math.tan(10)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #11]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_11(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(11, 15, 17)
+    
+    local calc = math.sin(11) * math.cos(11) + math.tan(11)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #12]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_12(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(12, 15, 17)
+    
+    local calc = math.sin(12) * math.cos(12) + math.tan(12)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #13]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_13(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(13, 15, 17)
+    
+    local calc = math.sin(13) * math.cos(13) + math.tan(13)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #14]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_14(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(14, 15, 17)
+    
+    local calc = math.sin(14) * math.cos(14) + math.tan(14)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #15]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_15(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 17)
+    
+    local calc = math.sin(15) * math.cos(15) + math.tan(15)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #16]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_16(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(16, 15, 17)
+    
+    local calc = math.sin(16) * math.cos(16) + math.tan(16)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #17]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_17(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(17, 15, 17)
+    
+    local calc = math.sin(17) * math.cos(17) + math.tan(17)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #18]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_18(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(18, 15, 17)
+    
+    local calc = math.sin(18) * math.cos(18) + math.tan(18)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #19]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_19(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(19, 15, 17)
+    
+    local calc = math.sin(19) * math.cos(19) + math.tan(19)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #20]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_20(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 15, 17)
+    
+    local calc = math.sin(20) * math.cos(20) + math.tan(20)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #21]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_21(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(21, 15, 17)
+    
+    local calc = math.sin(21) * math.cos(21) + math.tan(21)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #22]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_22(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(22, 15, 17)
+    
+    local calc = math.sin(22) * math.cos(22) + math.tan(22)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #23]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_23(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(23, 15, 17)
+    
+    local calc = math.sin(23) * math.cos(23) + math.tan(23)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #24]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_24(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(24, 15, 17)
+    
+    local calc = math.sin(24) * math.cos(24) + math.tan(24)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #25]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_25(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(25, 15, 17)
+    
+    local calc = math.sin(25) * math.cos(25) + math.tan(25)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #26]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_26(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(26, 15, 17)
+    
+    local calc = math.sin(26) * math.cos(26) + math.tan(26)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #27]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_27(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(27, 15, 17)
+    
+    local calc = math.sin(27) * math.cos(27) + math.tan(27)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #28]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_28(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(28, 15, 17)
+    
+    local calc = math.sin(28) * math.cos(28) + math.tan(28)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #29]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_29(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(29, 15, 17)
+    
+    local calc = math.sin(29) * math.cos(29) + math.tan(29)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #30]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_30(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(30, 15, 17)
+    
+    local calc = math.sin(30) * math.cos(30) + math.tan(30)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #31]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_31(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(31, 15, 17)
+    
+    local calc = math.sin(31) * math.cos(31) + math.tan(31)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #32]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_32(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(32, 15, 17)
+    
+    local calc = math.sin(32) * math.cos(32) + math.tan(32)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #33]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_33(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(33, 15, 17)
+    
+    local calc = math.sin(33) * math.cos(33) + math.tan(33)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #34]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_34(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(34, 15, 17)
+    
+    local calc = math.sin(34) * math.cos(34) + math.tan(34)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #35]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_35(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(35, 15, 17)
+    
+    local calc = math.sin(35) * math.cos(35) + math.tan(35)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #36]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_36(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(36, 15, 17)
+    
+    local calc = math.sin(36) * math.cos(36) + math.tan(36)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #37]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_37(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(37, 15, 17)
+    
+    local calc = math.sin(37) * math.cos(37) + math.tan(37)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #38]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_38(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(38, 15, 17)
+    
+    local calc = math.sin(38) * math.cos(38) + math.tan(38)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #39]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_39(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(39, 15, 17)
+    
+    local calc = math.sin(39) * math.cos(39) + math.tan(39)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #40]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_40(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(40, 15, 17)
+    
+    local calc = math.sin(40) * math.cos(40) + math.tan(40)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #41]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_41(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(41, 15, 17)
+    
+    local calc = math.sin(41) * math.cos(41) + math.tan(41)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #42]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_42(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(42, 15, 17)
+    
+    local calc = math.sin(42) * math.cos(42) + math.tan(42)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #43]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_43(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(43, 15, 17)
+    
+    local calc = math.sin(43) * math.cos(43) + math.tan(43)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #44]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_44(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(44, 15, 17)
+    
+    local calc = math.sin(44) * math.cos(44) + math.tan(44)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #45]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_45(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(45, 15, 17)
+    
+    local calc = math.sin(45) * math.cos(45) + math.tan(45)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #46]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_46(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(46, 15, 17)
+    
+    local calc = math.sin(46) * math.cos(46) + math.tan(46)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #47]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_47(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(47, 15, 17)
+    
+    local calc = math.sin(47) * math.cos(47) + math.tan(47)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #48]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_48(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(48, 15, 17)
+    
+    local calc = math.sin(48) * math.cos(48) + math.tan(48)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #49]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_49(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(49, 15, 17)
+    
+    local calc = math.sin(49) * math.cos(49) + math.tan(49)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #50]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_50(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(50, 15, 17)
+    
+    local calc = math.sin(50) * math.cos(50) + math.tan(50)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #51]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_51(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(51, 15, 17)
+    
+    local calc = math.sin(51) * math.cos(51) + math.tan(51)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #52]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_52(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(52, 15, 17)
+    
+    local calc = math.sin(52) * math.cos(52) + math.tan(52)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #53]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_53(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(53, 15, 17)
+    
+    local calc = math.sin(53) * math.cos(53) + math.tan(53)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #54]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_54(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(54, 15, 17)
+    
+    local calc = math.sin(54) * math.cos(54) + math.tan(54)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #55]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_55(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(55, 15, 17)
+    
+    local calc = math.sin(55) * math.cos(55) + math.tan(55)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #56]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_56(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(56, 15, 17)
+    
+    local calc = math.sin(56) * math.cos(56) + math.tan(56)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #57]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_57(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(57, 15, 17)
+    
+    local calc = math.sin(57) * math.cos(57) + math.tan(57)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #58]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_58(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(58, 15, 17)
+    
+    local calc = math.sin(58) * math.cos(58) + math.tan(58)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #59]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_59(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(59, 15, 17)
+    
+    local calc = math.sin(59) * math.cos(59) + math.tan(59)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #60]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_60(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(60, 15, 17)
+    
+    local calc = math.sin(60) * math.cos(60) + math.tan(60)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #61]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_61(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(61, 15, 17)
+    
+    local calc = math.sin(61) * math.cos(61) + math.tan(61)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #62]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_62(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(62, 15, 17)
+    
+    local calc = math.sin(62) * math.cos(62) + math.tan(62)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #63]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_63(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(63, 15, 17)
+    
+    local calc = math.sin(63) * math.cos(63) + math.tan(63)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #64]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_64(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(64, 15, 17)
+    
+    local calc = math.sin(64) * math.cos(64) + math.tan(64)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #65]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_65(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(65, 15, 17)
+    
+    local calc = math.sin(65) * math.cos(65) + math.tan(65)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #66]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_66(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(66, 15, 17)
+    
+    local calc = math.sin(66) * math.cos(66) + math.tan(66)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #67]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_67(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(67, 15, 17)
+    
+    local calc = math.sin(67) * math.cos(67) + math.tan(67)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #68]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_68(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(68, 15, 17)
+    
+    local calc = math.sin(68) * math.cos(68) + math.tan(68)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #69]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_69(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(69, 15, 17)
+    
+    local calc = math.sin(69) * math.cos(69) + math.tan(69)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #70]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_70(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(70, 15, 17)
+    
+    local calc = math.sin(70) * math.cos(70) + math.tan(70)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #71]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_71(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(71, 15, 17)
+    
+    local calc = math.sin(71) * math.cos(71) + math.tan(71)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #72]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_72(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(72, 15, 17)
+    
+    local calc = math.sin(72) * math.cos(72) + math.tan(72)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #73]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_73(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(73, 15, 17)
+    
+    local calc = math.sin(73) * math.cos(73) + math.tan(73)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #74]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_74(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(74, 15, 17)
+    
+    local calc = math.sin(74) * math.cos(74) + math.tan(74)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #75]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_75(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(75, 15, 17)
+    
+    local calc = math.sin(75) * math.cos(75) + math.tan(75)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #76]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_76(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(76, 15, 17)
+    
+    local calc = math.sin(76) * math.cos(76) + math.tan(76)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #77]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_77(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(77, 15, 17)
+    
+    local calc = math.sin(77) * math.cos(77) + math.tan(77)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #78]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_78(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(78, 15, 17)
+    
+    local calc = math.sin(78) * math.cos(78) + math.tan(78)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #79]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_79(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(79, 15, 17)
+    
+    local calc = math.sin(79) * math.cos(79) + math.tan(79)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #80]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_80(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(80, 15, 17)
+    
+    local calc = math.sin(80) * math.cos(80) + math.tan(80)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #81]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_81(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(81, 15, 17)
+    
+    local calc = math.sin(81) * math.cos(81) + math.tan(81)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #82]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_82(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(82, 15, 17)
+    
+    local calc = math.sin(82) * math.cos(82) + math.tan(82)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #83]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_83(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(83, 15, 17)
+    
+    local calc = math.sin(83) * math.cos(83) + math.tan(83)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #84]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_84(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(84, 15, 17)
+    
+    local calc = math.sin(84) * math.cos(84) + math.tan(84)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #85]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_85(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(85, 15, 17)
+    
+    local calc = math.sin(85) * math.cos(85) + math.tan(85)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #86]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_86(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(86, 15, 17)
+    
+    local calc = math.sin(86) * math.cos(86) + math.tan(86)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #87]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_87(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(87, 15, 17)
+    
+    local calc = math.sin(87) * math.cos(87) + math.tan(87)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #88]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_88(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(88, 15, 17)
+    
+    local calc = math.sin(88) * math.cos(88) + math.tan(88)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #89]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_89(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(89, 15, 17)
+    
+    local calc = math.sin(89) * math.cos(89) + math.tan(89)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #90]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_90(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(90, 15, 17)
+    
+    local calc = math.sin(90) * math.cos(90) + math.tan(90)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #91]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_91(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(91, 15, 17)
+    
+    local calc = math.sin(91) * math.cos(91) + math.tan(91)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #92]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_92(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(92, 15, 17)
+    
+    local calc = math.sin(92) * math.cos(92) + math.tan(92)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #93]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_93(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(93, 15, 17)
+    
+    local calc = math.sin(93) * math.cos(93) + math.tan(93)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #94]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_94(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(94, 15, 17)
+    
+    local calc = math.sin(94) * math.cos(94) + math.tan(94)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #95]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_95(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(95, 15, 17)
+    
+    local calc = math.sin(95) * math.cos(95) + math.tan(95)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #96]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_96(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(96, 15, 17)
+    
+    local calc = math.sin(96) * math.cos(96) + math.tan(96)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #97]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_97(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(97, 15, 17)
+    
+    local calc = math.sin(97) * math.cos(97) + math.tan(97)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #98]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_98(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(98, 15, 17)
+    
+    local calc = math.sin(98) * math.cos(98) + math.tan(98)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #99]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_99(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(99, 15, 17)
+    
+    local calc = math.sin(99) * math.cos(99) + math.tan(99)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #100]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_100(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(100, 15, 17)
+    
+    local calc = math.sin(100) * math.cos(100) + math.tan(100)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #101]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_101(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(101, 15, 17)
+    
+    local calc = math.sin(101) * math.cos(101) + math.tan(101)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #102]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_102(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(102, 15, 17)
+    
+    local calc = math.sin(102) * math.cos(102) + math.tan(102)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #103]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_103(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(103, 15, 17)
+    
+    local calc = math.sin(103) * math.cos(103) + math.tan(103)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #104]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_104(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(104, 15, 17)
+    
+    local calc = math.sin(104) * math.cos(104) + math.tan(104)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #105]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_105(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(105, 15, 17)
+    
+    local calc = math.sin(105) * math.cos(105) + math.tan(105)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #106]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_106(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(106, 15, 17)
+    
+    local calc = math.sin(106) * math.cos(106) + math.tan(106)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #107]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_107(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(107, 15, 17)
+    
+    local calc = math.sin(107) * math.cos(107) + math.tan(107)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #108]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_108(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(108, 15, 17)
+    
+    local calc = math.sin(108) * math.cos(108) + math.tan(108)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #109]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_109(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(109, 15, 17)
+    
+    local calc = math.sin(109) * math.cos(109) + math.tan(109)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #110]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_110(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(110, 15, 17)
+    
+    local calc = math.sin(110) * math.cos(110) + math.tan(110)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #111]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_111(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(111, 15, 17)
+    
+    local calc = math.sin(111) * math.cos(111) + math.tan(111)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #112]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_112(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(112, 15, 17)
+    
+    local calc = math.sin(112) * math.cos(112) + math.tan(112)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #113]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_113(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(113, 15, 17)
+    
+    local calc = math.sin(113) * math.cos(113) + math.tan(113)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #114]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_114(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(114, 15, 17)
+    
+    local calc = math.sin(114) * math.cos(114) + math.tan(114)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #115]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_115(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(115, 15, 17)
+    
+    local calc = math.sin(115) * math.cos(115) + math.tan(115)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #116]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_116(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(116, 15, 17)
+    
+    local calc = math.sin(116) * math.cos(116) + math.tan(116)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #117]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_117(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(117, 15, 17)
+    
+    local calc = math.sin(117) * math.cos(117) + math.tan(117)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #118]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_118(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(118, 15, 17)
+    
+    local calc = math.sin(118) * math.cos(118) + math.tan(118)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #119]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_119(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(119, 15, 17)
+    
+    local calc = math.sin(119) * math.cos(119) + math.tan(119)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #120]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_120(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(120, 15, 17)
+    
+    local calc = math.sin(120) * math.cos(120) + math.tan(120)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #121]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_121(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(121, 15, 17)
+    
+    local calc = math.sin(121) * math.cos(121) + math.tan(121)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #122]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_122(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(122, 15, 17)
+    
+    local calc = math.sin(122) * math.cos(122) + math.tan(122)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #123]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_123(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(123, 15, 17)
+    
+    local calc = math.sin(123) * math.cos(123) + math.tan(123)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #124]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_124(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(124, 15, 17)
+    
+    local calc = math.sin(124) * math.cos(124) + math.tan(124)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #125]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_125(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(125, 15, 17)
+    
+    local calc = math.sin(125) * math.cos(125) + math.tan(125)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #126]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_126(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(126, 15, 17)
+    
+    local calc = math.sin(126) * math.cos(126) + math.tan(126)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #127]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_127(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(127, 15, 17)
+    
+    local calc = math.sin(127) * math.cos(127) + math.tan(127)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #128]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_128(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(128, 15, 17)
+    
+    local calc = math.sin(128) * math.cos(128) + math.tan(128)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #129]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_129(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(129, 15, 17)
+    
+    local calc = math.sin(129) * math.cos(129) + math.tan(129)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #130]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_130(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(130, 15, 17)
+    
+    local calc = math.sin(130) * math.cos(130) + math.tan(130)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #131]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_131(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(131, 15, 17)
+    
+    local calc = math.sin(131) * math.cos(131) + math.tan(131)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #132]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_132(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(132, 15, 17)
+    
+    local calc = math.sin(132) * math.cos(132) + math.tan(132)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #133]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_133(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(133, 15, 17)
+    
+    local calc = math.sin(133) * math.cos(133) + math.tan(133)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #134]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_134(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(134, 15, 17)
+    
+    local calc = math.sin(134) * math.cos(134) + math.tan(134)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #135]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_135(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(135, 15, 17)
+    
+    local calc = math.sin(135) * math.cos(135) + math.tan(135)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #136]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_136(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(136, 15, 17)
+    
+    local calc = math.sin(136) * math.cos(136) + math.tan(136)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #137]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_137(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(137, 15, 17)
+    
+    local calc = math.sin(137) * math.cos(137) + math.tan(137)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #138]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_138(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(138, 15, 17)
+    
+    local calc = math.sin(138) * math.cos(138) + math.tan(138)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #139]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_139(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(139, 15, 17)
+    
+    local calc = math.sin(139) * math.cos(139) + math.tan(139)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #140]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_140(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(140, 15, 17)
+    
+    local calc = math.sin(140) * math.cos(140) + math.tan(140)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #141]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_141(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(141, 15, 17)
+    
+    local calc = math.sin(141) * math.cos(141) + math.tan(141)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #142]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_142(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(142, 15, 17)
+    
+    local calc = math.sin(142) * math.cos(142) + math.tan(142)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #143]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_143(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(143, 15, 17)
+    
+    local calc = math.sin(143) * math.cos(143) + math.tan(143)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #144]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_144(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(144, 15, 17)
+    
+    local calc = math.sin(144) * math.cos(144) + math.tan(144)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #145]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_145(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(145, 15, 17)
+    
+    local calc = math.sin(145) * math.cos(145) + math.tan(145)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #146]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_146(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(146, 15, 17)
+    
+    local calc = math.sin(146) * math.cos(146) + math.tan(146)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #147]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_147(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(147, 15, 17)
+    
+    local calc = math.sin(147) * math.cos(147) + math.tan(147)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #148]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_148(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(148, 15, 17)
+    
+    local calc = math.sin(148) * math.cos(148) + math.tan(148)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #149]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_149(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(149, 15, 17)
+    
+    local calc = math.sin(149) * math.cos(149) + math.tan(149)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #150]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_150(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(150, 15, 17)
+    
+    local calc = math.sin(150) * math.cos(150) + math.tan(150)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #151]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_151(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(151, 15, 17)
+    
+    local calc = math.sin(151) * math.cos(151) + math.tan(151)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #152]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_152(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(152, 15, 17)
+    
+    local calc = math.sin(152) * math.cos(152) + math.tan(152)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #153]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_153(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(153, 15, 17)
+    
+    local calc = math.sin(153) * math.cos(153) + math.tan(153)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #154]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_154(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(154, 15, 17)
+    
+    local calc = math.sin(154) * math.cos(154) + math.tan(154)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #155]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_155(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(155, 15, 17)
+    
+    local calc = math.sin(155) * math.cos(155) + math.tan(155)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #156]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_156(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(156, 15, 17)
+    
+    local calc = math.sin(156) * math.cos(156) + math.tan(156)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #157]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_157(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(157, 15, 17)
+    
+    local calc = math.sin(157) * math.cos(157) + math.tan(157)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #158]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_158(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(158, 15, 17)
+    
+    local calc = math.sin(158) * math.cos(158) + math.tan(158)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #159]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_159(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(159, 15, 17)
+    
+    local calc = math.sin(159) * math.cos(159) + math.tan(159)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #160]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_160(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(160, 15, 17)
+    
+    local calc = math.sin(160) * math.cos(160) + math.tan(160)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #161]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_161(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(161, 15, 17)
+    
+    local calc = math.sin(161) * math.cos(161) + math.tan(161)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #162]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_162(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(162, 15, 17)
+    
+    local calc = math.sin(162) * math.cos(162) + math.tan(162)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #163]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_163(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(163, 15, 17)
+    
+    local calc = math.sin(163) * math.cos(163) + math.tan(163)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #164]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_164(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(164, 15, 17)
+    
+    local calc = math.sin(164) * math.cos(164) + math.tan(164)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #165]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_165(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(165, 15, 17)
+    
+    local calc = math.sin(165) * math.cos(165) + math.tan(165)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #166]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_166(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(166, 15, 17)
+    
+    local calc = math.sin(166) * math.cos(166) + math.tan(166)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #167]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_167(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(167, 15, 17)
+    
+    local calc = math.sin(167) * math.cos(167) + math.tan(167)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #168]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_168(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(168, 15, 17)
+    
+    local calc = math.sin(168) * math.cos(168) + math.tan(168)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #169]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_169(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(169, 15, 17)
+    
+    local calc = math.sin(169) * math.cos(169) + math.tan(169)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #170]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_170(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(170, 15, 17)
+    
+    local calc = math.sin(170) * math.cos(170) + math.tan(170)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #171]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_171(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(171, 15, 17)
+    
+    local calc = math.sin(171) * math.cos(171) + math.tan(171)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #172]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_172(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(172, 15, 17)
+    
+    local calc = math.sin(172) * math.cos(172) + math.tan(172)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #173]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_173(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(173, 15, 17)
+    
+    local calc = math.sin(173) * math.cos(173) + math.tan(173)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #174]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_174(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(174, 15, 17)
+    
+    local calc = math.sin(174) * math.cos(174) + math.tan(174)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #175]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_175(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(175, 15, 17)
+    
+    local calc = math.sin(175) * math.cos(175) + math.tan(175)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #176]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_176(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(176, 15, 17)
+    
+    local calc = math.sin(176) * math.cos(176) + math.tan(176)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #177]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_177(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(177, 15, 17)
+    
+    local calc = math.sin(177) * math.cos(177) + math.tan(177)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #178]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_178(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(178, 15, 17)
+    
+    local calc = math.sin(178) * math.cos(178) + math.tan(178)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #179]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_179(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(179, 15, 17)
+    
+    local calc = math.sin(179) * math.cos(179) + math.tan(179)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #180]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_180(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(180, 15, 17)
+    
+    local calc = math.sin(180) * math.cos(180) + math.tan(180)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #181]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_181(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(181, 15, 17)
+    
+    local calc = math.sin(181) * math.cos(181) + math.tan(181)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #182]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_182(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(182, 15, 17)
+    
+    local calc = math.sin(182) * math.cos(182) + math.tan(182)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #183]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_183(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(183, 15, 17)
+    
+    local calc = math.sin(183) * math.cos(183) + math.tan(183)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #184]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_184(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(184, 15, 17)
+    
+    local calc = math.sin(184) * math.cos(184) + math.tan(184)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #185]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_185(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(185, 15, 17)
+    
+    local calc = math.sin(185) * math.cos(185) + math.tan(185)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #186]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_186(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(186, 15, 17)
+    
+    local calc = math.sin(186) * math.cos(186) + math.tan(186)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #187]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_187(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(187, 15, 17)
+    
+    local calc = math.sin(187) * math.cos(187) + math.tan(187)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #188]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_188(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(188, 15, 17)
+    
+    local calc = math.sin(188) * math.cos(188) + math.tan(188)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #189]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_189(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(189, 15, 17)
+    
+    local calc = math.sin(189) * math.cos(189) + math.tan(189)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #190]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_190(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(190, 15, 17)
+    
+    local calc = math.sin(190) * math.cos(190) + math.tan(190)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #191]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_191(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(191, 15, 17)
+    
+    local calc = math.sin(191) * math.cos(191) + math.tan(191)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #192]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_192(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(192, 15, 17)
+    
+    local calc = math.sin(192) * math.cos(192) + math.tan(192)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #193]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_193(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(193, 15, 17)
+    
+    local calc = math.sin(193) * math.cos(193) + math.tan(193)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #194]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_194(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(194, 15, 17)
+    
+    local calc = math.sin(194) * math.cos(194) + math.tan(194)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #195]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_195(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(195, 15, 17)
+    
+    local calc = math.sin(195) * math.cos(195) + math.tan(195)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #196]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_196(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(196, 15, 17)
+    
+    local calc = math.sin(196) * math.cos(196) + math.tan(196)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #197]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_197(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(197, 15, 17)
+    
+    local calc = math.sin(197) * math.cos(197) + math.tan(197)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #198]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_198(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(198, 15, 17)
+    
+    local calc = math.sin(198) * math.cos(198) + math.tan(198)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #199]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_199(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(199, 15, 17)
+    
+    local calc = math.sin(199) * math.cos(199) + math.tan(199)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #200]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_200(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(200, 15, 17)
+    
+    local calc = math.sin(200) * math.cos(200) + math.tan(200)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #201]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_201(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(201, 15, 17)
+    
+    local calc = math.sin(201) * math.cos(201) + math.tan(201)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #202]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_202(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(202, 15, 17)
+    
+    local calc = math.sin(202) * math.cos(202) + math.tan(202)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #203]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_203(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(203, 15, 17)
+    
+    local calc = math.sin(203) * math.cos(203) + math.tan(203)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #204]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_204(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(204, 15, 17)
+    
+    local calc = math.sin(204) * math.cos(204) + math.tan(204)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #205]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_205(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(205, 15, 17)
+    
+    local calc = math.sin(205) * math.cos(205) + math.tan(205)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #206]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_206(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(206, 15, 17)
+    
+    local calc = math.sin(206) * math.cos(206) + math.tan(206)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #207]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_207(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(207, 15, 17)
+    
+    local calc = math.sin(207) * math.cos(207) + math.tan(207)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #208]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_208(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(208, 15, 17)
+    
+    local calc = math.sin(208) * math.cos(208) + math.tan(208)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #209]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_209(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(209, 15, 17)
+    
+    local calc = math.sin(209) * math.cos(209) + math.tan(209)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #210]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_210(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(210, 15, 17)
+    
+    local calc = math.sin(210) * math.cos(210) + math.tan(210)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #211]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_211(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(211, 15, 17)
+    
+    local calc = math.sin(211) * math.cos(211) + math.tan(211)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #212]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_212(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(212, 15, 17)
+    
+    local calc = math.sin(212) * math.cos(212) + math.tan(212)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #213]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_213(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(213, 15, 17)
+    
+    local calc = math.sin(213) * math.cos(213) + math.tan(213)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #214]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_214(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(214, 15, 17)
+    
+    local calc = math.sin(214) * math.cos(214) + math.tan(214)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #215]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_215(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(215, 15, 17)
+    
+    local calc = math.sin(215) * math.cos(215) + math.tan(215)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #216]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_216(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(216, 15, 17)
+    
+    local calc = math.sin(216) * math.cos(216) + math.tan(216)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #217]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_217(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(217, 15, 17)
+    
+    local calc = math.sin(217) * math.cos(217) + math.tan(217)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #218]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_218(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(218, 15, 17)
+    
+    local calc = math.sin(218) * math.cos(218) + math.tan(218)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #219]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_219(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(219, 15, 17)
+    
+    local calc = math.sin(219) * math.cos(219) + math.tan(219)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #220]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_220(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(220, 15, 17)
+    
+    local calc = math.sin(220) * math.cos(220) + math.tan(220)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #221]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_221(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(221, 15, 17)
+    
+    local calc = math.sin(221) * math.cos(221) + math.tan(221)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #222]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_222(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(222, 15, 17)
+    
+    local calc = math.sin(222) * math.cos(222) + math.tan(222)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #223]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_223(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(223, 15, 17)
+    
+    local calc = math.sin(223) * math.cos(223) + math.tan(223)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #224]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_224(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(224, 15, 17)
+    
+    local calc = math.sin(224) * math.cos(224) + math.tan(224)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #225]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_225(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(225, 15, 17)
+    
+    local calc = math.sin(225) * math.cos(225) + math.tan(225)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #226]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_226(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(226, 15, 17)
+    
+    local calc = math.sin(226) * math.cos(226) + math.tan(226)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #227]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_227(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(227, 15, 17)
+    
+    local calc = math.sin(227) * math.cos(227) + math.tan(227)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #228]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_228(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(228, 15, 17)
+    
+    local calc = math.sin(228) * math.cos(228) + math.tan(228)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #229]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_229(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(229, 15, 17)
+    
+    local calc = math.sin(229) * math.cos(229) + math.tan(229)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #230]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_230(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(230, 15, 17)
+    
+    local calc = math.sin(230) * math.cos(230) + math.tan(230)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #231]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_231(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(231, 15, 17)
+    
+    local calc = math.sin(231) * math.cos(231) + math.tan(231)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #232]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_232(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(232, 15, 17)
+    
+    local calc = math.sin(232) * math.cos(232) + math.tan(232)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #233]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_233(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(233, 15, 17)
+    
+    local calc = math.sin(233) * math.cos(233) + math.tan(233)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #234]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_234(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(234, 15, 17)
+    
+    local calc = math.sin(234) * math.cos(234) + math.tan(234)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #235]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_235(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(235, 15, 17)
+    
+    local calc = math.sin(235) * math.cos(235) + math.tan(235)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #236]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_236(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(236, 15, 17)
+    
+    local calc = math.sin(236) * math.cos(236) + math.tan(236)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #237]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_237(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(237, 15, 17)
+    
+    local calc = math.sin(237) * math.cos(237) + math.tan(237)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #238]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_238(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(238, 15, 17)
+    
+    local calc = math.sin(238) * math.cos(238) + math.tan(238)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #239]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_239(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(239, 15, 17)
+    
+    local calc = math.sin(239) * math.cos(239) + math.tan(239)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #240]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_240(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(240, 15, 17)
+    
+    local calc = math.sin(240) * math.cos(240) + math.tan(240)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #241]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_241(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(241, 15, 17)
+    
+    local calc = math.sin(241) * math.cos(241) + math.tan(241)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #242]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_242(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(242, 15, 17)
+    
+    local calc = math.sin(242) * math.cos(242) + math.tan(242)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #243]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_243(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(243, 15, 17)
+    
+    local calc = math.sin(243) * math.cos(243) + math.tan(243)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #244]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_244(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(244, 15, 17)
+    
+    local calc = math.sin(244) * math.cos(244) + math.tan(244)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #245]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_245(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(245, 15, 17)
+    
+    local calc = math.sin(245) * math.cos(245) + math.tan(245)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #246]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_246(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(246, 15, 17)
+    
+    local calc = math.sin(246) * math.cos(246) + math.tan(246)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #247]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_247(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(247, 15, 17)
+    
+    local calc = math.sin(247) * math.cos(247) + math.tan(247)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #248]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_248(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(248, 15, 17)
+    
+    local calc = math.sin(248) * math.cos(248) + math.tan(248)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #249]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_249(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(249, 15, 17)
+    
+    local calc = math.sin(249) * math.cos(249) + math.tan(249)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #250]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_250(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(250, 15, 17)
+    
+    local calc = math.sin(250) * math.cos(250) + math.tan(250)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #251]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_251(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(251, 15, 17)
+    
+    local calc = math.sin(251) * math.cos(251) + math.tan(251)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #252]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_252(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(252, 15, 17)
+    
+    local calc = math.sin(252) * math.cos(252) + math.tan(252)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #253]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_253(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(253, 15, 17)
+    
+    local calc = math.sin(253) * math.cos(253) + math.tan(253)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #254]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_254(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(254, 15, 17)
+    
+    local calc = math.sin(254) * math.cos(254) + math.tan(254)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #255]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_255(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(0, 15, 17)
+    
+    local calc = math.sin(255) * math.cos(255) + math.tan(255)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #256]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_256(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(1, 15, 17)
+    
+    local calc = math.sin(256) * math.cos(256) + math.tan(256)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #257]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_257(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(2, 15, 17)
+    
+    local calc = math.sin(257) * math.cos(257) + math.tan(257)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #258]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_258(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(3, 15, 17)
+    
+    local calc = math.sin(258) * math.cos(258) + math.tan(258)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #259]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_259(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(4, 15, 17)
+    
+    local calc = math.sin(259) * math.cos(259) + math.tan(259)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #260]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_260(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(5, 15, 17)
+    
+    local calc = math.sin(260) * math.cos(260) + math.tan(260)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #261]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_261(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(6, 15, 17)
+    
+    local calc = math.sin(261) * math.cos(261) + math.tan(261)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #262]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_262(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(7, 15, 17)
+    
+    local calc = math.sin(262) * math.cos(262) + math.tan(262)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #263]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_263(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(8, 15, 17)
+    
+    local calc = math.sin(263) * math.cos(263) + math.tan(263)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #264]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_264(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(9, 15, 17)
+    
+    local calc = math.sin(264) * math.cos(264) + math.tan(264)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #265]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_265(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(10, 15, 17)
+    
+    local calc = math.sin(265) * math.cos(265) + math.tan(265)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #266]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_266(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(11, 15, 17)
+    
+    local calc = math.sin(266) * math.cos(266) + math.tan(266)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #267]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_267(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(12, 15, 17)
+    
+    local calc = math.sin(267) * math.cos(267) + math.tan(267)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #268]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_268(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(13, 15, 17)
+    
+    local calc = math.sin(268) * math.cos(268) + math.tan(268)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #269]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_269(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(14, 15, 17)
+    
+    local calc = math.sin(269) * math.cos(269) + math.tan(269)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #270]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_270(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 17)
+    
+    local calc = math.sin(270) * math.cos(270) + math.tan(270)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #271]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_271(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(16, 15, 17)
+    
+    local calc = math.sin(271) * math.cos(271) + math.tan(271)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #272]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_272(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(17, 15, 17)
+    
+    local calc = math.sin(272) * math.cos(272) + math.tan(272)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #273]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_273(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(18, 15, 17)
+    
+    local calc = math.sin(273) * math.cos(273) + math.tan(273)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #274]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_274(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(19, 15, 17)
+    
+    local calc = math.sin(274) * math.cos(274) + math.tan(274)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #275]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_275(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 15, 17)
+    
+    local calc = math.sin(275) * math.cos(275) + math.tan(275)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #276]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_276(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(21, 15, 17)
+    
+    local calc = math.sin(276) * math.cos(276) + math.tan(276)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #277]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_277(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(22, 15, 17)
+    
+    local calc = math.sin(277) * math.cos(277) + math.tan(277)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #278]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_278(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(23, 15, 17)
+    
+    local calc = math.sin(278) * math.cos(278) + math.tan(278)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #279]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_279(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(24, 15, 17)
+    
+    local calc = math.sin(279) * math.cos(279) + math.tan(279)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #280]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_280(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(25, 15, 17)
+    
+    local calc = math.sin(280) * math.cos(280) + math.tan(280)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #281]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_281(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(26, 15, 17)
+    
+    local calc = math.sin(281) * math.cos(281) + math.tan(281)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #282]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_282(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(27, 15, 17)
+    
+    local calc = math.sin(282) * math.cos(282) + math.tan(282)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #283]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_283(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(28, 15, 17)
+    
+    local calc = math.sin(283) * math.cos(283) + math.tan(283)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #284]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_284(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(29, 15, 17)
+    
+    local calc = math.sin(284) * math.cos(284) + math.tan(284)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #285]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_285(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(30, 15, 17)
+    
+    local calc = math.sin(285) * math.cos(285) + math.tan(285)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #286]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_286(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(31, 15, 17)
+    
+    local calc = math.sin(286) * math.cos(286) + math.tan(286)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #287]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_287(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(32, 15, 17)
+    
+    local calc = math.sin(287) * math.cos(287) + math.tan(287)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #288]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_288(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(33, 15, 17)
+    
+    local calc = math.sin(288) * math.cos(288) + math.tan(288)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #289]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_289(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(34, 15, 17)
+    
+    local calc = math.sin(289) * math.cos(289) + math.tan(289)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #290]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_290(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(35, 15, 17)
+    
+    local calc = math.sin(290) * math.cos(290) + math.tan(290)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #291]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_291(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(36, 15, 17)
+    
+    local calc = math.sin(291) * math.cos(291) + math.tan(291)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #292]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_292(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(37, 15, 17)
+    
+    local calc = math.sin(292) * math.cos(292) + math.tan(292)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #293]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_293(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(38, 15, 17)
+    
+    local calc = math.sin(293) * math.cos(293) + math.tan(293)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #294]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_294(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(39, 15, 17)
+    
+    local calc = math.sin(294) * math.cos(294) + math.tan(294)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #295]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_295(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(40, 15, 17)
+    
+    local calc = math.sin(295) * math.cos(295) + math.tan(295)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #296]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_296(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(41, 15, 17)
+    
+    local calc = math.sin(296) * math.cos(296) + math.tan(296)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #297]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_297(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(42, 15, 17)
+    
+    local calc = math.sin(297) * math.cos(297) + math.tan(297)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #298]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_298(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(43, 15, 17)
+    
+    local calc = math.sin(298) * math.cos(298) + math.tan(298)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #299]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_299(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(44, 15, 17)
+    
+    local calc = math.sin(299) * math.cos(299) + math.tan(299)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #300]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_300(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(45, 15, 17)
+    
+    local calc = math.sin(300) * math.cos(300) + math.tan(300)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #301]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_301(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(46, 15, 17)
+    
+    local calc = math.sin(301) * math.cos(301) + math.tan(301)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #302]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_302(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(47, 15, 17)
+    
+    local calc = math.sin(302) * math.cos(302) + math.tan(302)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #303]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_303(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(48, 15, 17)
+    
+    local calc = math.sin(303) * math.cos(303) + math.tan(303)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #304]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_304(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(49, 15, 17)
+    
+    local calc = math.sin(304) * math.cos(304) + math.tan(304)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #305]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_305(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(50, 15, 17)
+    
+    local calc = math.sin(305) * math.cos(305) + math.tan(305)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #306]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_306(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(51, 15, 17)
+    
+    local calc = math.sin(306) * math.cos(306) + math.tan(306)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #307]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_307(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(52, 15, 17)
+    
+    local calc = math.sin(307) * math.cos(307) + math.tan(307)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #308]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_308(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(53, 15, 17)
+    
+    local calc = math.sin(308) * math.cos(308) + math.tan(308)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #309]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_309(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(54, 15, 17)
+    
+    local calc = math.sin(309) * math.cos(309) + math.tan(309)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #310]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_310(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(55, 15, 17)
+    
+    local calc = math.sin(310) * math.cos(310) + math.tan(310)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #311]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_311(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(56, 15, 17)
+    
+    local calc = math.sin(311) * math.cos(311) + math.tan(311)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #312]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_312(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(57, 15, 17)
+    
+    local calc = math.sin(312) * math.cos(312) + math.tan(312)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #313]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_313(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(58, 15, 17)
+    
+    local calc = math.sin(313) * math.cos(313) + math.tan(313)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #314]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_314(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(59, 15, 17)
+    
+    local calc = math.sin(314) * math.cos(314) + math.tan(314)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #315]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_315(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(60, 15, 17)
+    
+    local calc = math.sin(315) * math.cos(315) + math.tan(315)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #316]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_316(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(61, 15, 17)
+    
+    local calc = math.sin(316) * math.cos(316) + math.tan(316)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #317]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_317(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(62, 15, 17)
+    
+    local calc = math.sin(317) * math.cos(317) + math.tan(317)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #318]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_318(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(63, 15, 17)
+    
+    local calc = math.sin(318) * math.cos(318) + math.tan(318)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #319]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_319(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(64, 15, 17)
+    
+    local calc = math.sin(319) * math.cos(319) + math.tan(319)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #320]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_320(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(65, 15, 17)
+    
+    local calc = math.sin(320) * math.cos(320) + math.tan(320)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #321]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_321(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(66, 15, 17)
+    
+    local calc = math.sin(321) * math.cos(321) + math.tan(321)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #322]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_322(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(67, 15, 17)
+    
+    local calc = math.sin(322) * math.cos(322) + math.tan(322)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #323]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_323(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(68, 15, 17)
+    
+    local calc = math.sin(323) * math.cos(323) + math.tan(323)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #324]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_324(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(69, 15, 17)
+    
+    local calc = math.sin(324) * math.cos(324) + math.tan(324)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #325]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_325(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(70, 15, 17)
+    
+    local calc = math.sin(325) * math.cos(325) + math.tan(325)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #326]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_326(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(71, 15, 17)
+    
+    local calc = math.sin(326) * math.cos(326) + math.tan(326)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #327]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_327(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(72, 15, 17)
+    
+    local calc = math.sin(327) * math.cos(327) + math.tan(327)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #328]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_328(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(73, 15, 17)
+    
+    local calc = math.sin(328) * math.cos(328) + math.tan(328)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #329]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_329(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(74, 15, 17)
+    
+    local calc = math.sin(329) * math.cos(329) + math.tan(329)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #330]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_330(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(75, 15, 17)
+    
+    local calc = math.sin(330) * math.cos(330) + math.tan(330)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #331]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_331(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(76, 15, 17)
+    
+    local calc = math.sin(331) * math.cos(331) + math.tan(331)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #332]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_332(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(77, 15, 17)
+    
+    local calc = math.sin(332) * math.cos(332) + math.tan(332)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #333]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_333(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(78, 15, 17)
+    
+    local calc = math.sin(333) * math.cos(333) + math.tan(333)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #334]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_334(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(79, 15, 17)
+    
+    local calc = math.sin(334) * math.cos(334) + math.tan(334)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #335]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_335(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(80, 15, 17)
+    
+    local calc = math.sin(335) * math.cos(335) + math.tan(335)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #336]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_336(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(81, 15, 17)
+    
+    local calc = math.sin(336) * math.cos(336) + math.tan(336)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #337]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_337(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(82, 15, 17)
+    
+    local calc = math.sin(337) * math.cos(337) + math.tan(337)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #338]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_338(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(83, 15, 17)
+    
+    local calc = math.sin(338) * math.cos(338) + math.tan(338)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #339]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_339(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(84, 15, 17)
+    
+    local calc = math.sin(339) * math.cos(339) + math.tan(339)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #340]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_340(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(85, 15, 17)
+    
+    local calc = math.sin(340) * math.cos(340) + math.tan(340)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #341]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_341(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(86, 15, 17)
+    
+    local calc = math.sin(341) * math.cos(341) + math.tan(341)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #342]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_342(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(87, 15, 17)
+    
+    local calc = math.sin(342) * math.cos(342) + math.tan(342)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #343]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_343(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(88, 15, 17)
+    
+    local calc = math.sin(343) * math.cos(343) + math.tan(343)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #344]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_344(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(89, 15, 17)
+    
+    local calc = math.sin(344) * math.cos(344) + math.tan(344)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #345]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_345(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(90, 15, 17)
+    
+    local calc = math.sin(345) * math.cos(345) + math.tan(345)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #346]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_346(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(91, 15, 17)
+    
+    local calc = math.sin(346) * math.cos(346) + math.tan(346)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #347]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_347(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(92, 15, 17)
+    
+    local calc = math.sin(347) * math.cos(347) + math.tan(347)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #348]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_348(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(93, 15, 17)
+    
+    local calc = math.sin(348) * math.cos(348) + math.tan(348)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #349]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_349(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(94, 15, 17)
+    
+    local calc = math.sin(349) * math.cos(349) + math.tan(349)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #350]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_350(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(95, 15, 17)
+    
+    local calc = math.sin(350) * math.cos(350) + math.tan(350)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #351]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_351(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(96, 15, 17)
+    
+    local calc = math.sin(351) * math.cos(351) + math.tan(351)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #352]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_352(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(97, 15, 17)
+    
+    local calc = math.sin(352) * math.cos(352) + math.tan(352)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #353]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_353(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(98, 15, 17)
+    
+    local calc = math.sin(353) * math.cos(353) + math.tan(353)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #354]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_354(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(99, 15, 17)
+    
+    local calc = math.sin(354) * math.cos(354) + math.tan(354)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #355]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_355(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(100, 15, 17)
+    
+    local calc = math.sin(355) * math.cos(355) + math.tan(355)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #356]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_356(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(101, 15, 17)
+    
+    local calc = math.sin(356) * math.cos(356) + math.tan(356)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #357]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_357(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(102, 15, 17)
+    
+    local calc = math.sin(357) * math.cos(357) + math.tan(357)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #358]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_358(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(103, 15, 17)
+    
+    local calc = math.sin(358) * math.cos(358) + math.tan(358)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #359]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_359(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(104, 15, 17)
+    
+    local calc = math.sin(359) * math.cos(359) + math.tan(359)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #360]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_360(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(105, 15, 17)
+    
+    local calc = math.sin(360) * math.cos(360) + math.tan(360)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #361]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_361(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(106, 15, 17)
+    
+    local calc = math.sin(361) * math.cos(361) + math.tan(361)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #362]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_362(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(107, 15, 17)
+    
+    local calc = math.sin(362) * math.cos(362) + math.tan(362)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #363]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_363(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(108, 15, 17)
+    
+    local calc = math.sin(363) * math.cos(363) + math.tan(363)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #364]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_364(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(109, 15, 17)
+    
+    local calc = math.sin(364) * math.cos(364) + math.tan(364)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #365]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_365(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(110, 15, 17)
+    
+    local calc = math.sin(365) * math.cos(365) + math.tan(365)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #366]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_366(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(111, 15, 17)
+    
+    local calc = math.sin(366) * math.cos(366) + math.tan(366)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #367]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_367(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(112, 15, 17)
+    
+    local calc = math.sin(367) * math.cos(367) + math.tan(367)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #368]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_368(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(113, 15, 17)
+    
+    local calc = math.sin(368) * math.cos(368) + math.tan(368)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #369]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_369(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(114, 15, 17)
+    
+    local calc = math.sin(369) * math.cos(369) + math.tan(369)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #370]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_370(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(115, 15, 17)
+    
+    local calc = math.sin(370) * math.cos(370) + math.tan(370)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #371]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_371(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(116, 15, 17)
+    
+    local calc = math.sin(371) * math.cos(371) + math.tan(371)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #372]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_372(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(117, 15, 17)
+    
+    local calc = math.sin(372) * math.cos(372) + math.tan(372)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #373]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_373(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(118, 15, 17)
+    
+    local calc = math.sin(373) * math.cos(373) + math.tan(373)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #374]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_374(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(119, 15, 17)
+    
+    local calc = math.sin(374) * math.cos(374) + math.tan(374)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #375]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_375(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(120, 15, 17)
+    
+    local calc = math.sin(375) * math.cos(375) + math.tan(375)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #376]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_376(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(121, 15, 17)
+    
+    local calc = math.sin(376) * math.cos(376) + math.tan(376)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #377]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_377(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(122, 15, 17)
+    
+    local calc = math.sin(377) * math.cos(377) + math.tan(377)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #378]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_378(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(123, 15, 17)
+    
+    local calc = math.sin(378) * math.cos(378) + math.tan(378)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #379]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_379(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(124, 15, 17)
+    
+    local calc = math.sin(379) * math.cos(379) + math.tan(379)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #380]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_380(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(125, 15, 17)
+    
+    local calc = math.sin(380) * math.cos(380) + math.tan(380)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #381]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_381(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(126, 15, 17)
+    
+    local calc = math.sin(381) * math.cos(381) + math.tan(381)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #382]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_382(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(127, 15, 17)
+    
+    local calc = math.sin(382) * math.cos(382) + math.tan(382)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #383]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_383(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(128, 15, 17)
+    
+    local calc = math.sin(383) * math.cos(383) + math.tan(383)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #384]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_384(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(129, 15, 17)
+    
+    local calc = math.sin(384) * math.cos(384) + math.tan(384)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #385]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_385(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(130, 15, 17)
+    
+    local calc = math.sin(385) * math.cos(385) + math.tan(385)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #386]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_386(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(131, 15, 17)
+    
+    local calc = math.sin(386) * math.cos(386) + math.tan(386)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #387]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_387(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(132, 15, 17)
+    
+    local calc = math.sin(387) * math.cos(387) + math.tan(387)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #388]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_388(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(133, 15, 17)
+    
+    local calc = math.sin(388) * math.cos(388) + math.tan(388)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #389]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_389(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(134, 15, 17)
+    
+    local calc = math.sin(389) * math.cos(389) + math.tan(389)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #390]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_390(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(135, 15, 17)
+    
+    local calc = math.sin(390) * math.cos(390) + math.tan(390)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #391]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_391(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(136, 15, 17)
+    
+    local calc = math.sin(391) * math.cos(391) + math.tan(391)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #392]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_392(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(137, 15, 17)
+    
+    local calc = math.sin(392) * math.cos(392) + math.tan(392)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #393]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_393(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(138, 15, 17)
+    
+    local calc = math.sin(393) * math.cos(393) + math.tan(393)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #394]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_394(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(139, 15, 17)
+    
+    local calc = math.sin(394) * math.cos(394) + math.tan(394)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #395]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_395(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(140, 15, 17)
+    
+    local calc = math.sin(395) * math.cos(395) + math.tan(395)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #396]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_396(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(141, 15, 17)
+    
+    local calc = math.sin(396) * math.cos(396) + math.tan(396)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #397]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_397(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(142, 15, 17)
+    
+    local calc = math.sin(397) * math.cos(397) + math.tan(397)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #398]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_398(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(143, 15, 17)
+    
+    local calc = math.sin(398) * math.cos(398) + math.tan(398)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #399]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_399(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(144, 15, 17)
+    
+    local calc = math.sin(399) * math.cos(399) + math.tan(399)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- [UI Component Architecture Block #400]
+-- Provides advanced layout calculations and event propagation handling
+function UILibrary:CreateComplexElement_400(parent, name, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Name = name
+    Frame.Size = UDim2.new(1, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(145, 15, 17)
+    
+    local calc = math.sin(400) * math.cos(400) + math.tan(400)
+    if calc > 0 then
+        Frame.BackgroundTransparency = 0.1
+    end
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            callback(calc)
+        end
+    end)
+    
+    local SubLayer = Instance.new("Frame", Frame)
+    SubLayer.Size = UDim2.new(1, -10, 1, -10)
+    SubLayer.Position = UDim2.new(0, 5, 0, 5)
+    SubLayer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    
+    return Frame
+end
+
+-- ======================= MATH UTILS =======================
+-- [FTAP Physics Matrix Engine Node #1]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_1(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(1, 2, 3))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #2]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_2(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(2, 4, 6))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #3]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_3(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(3, 6, 9))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #4]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_4(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(4, 8, 12))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #5]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_5(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(5, 10, 15))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #6]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_6(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(6, 12, 18))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #7]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_7(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(7, 14, 21))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #8]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_8(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(8, 16, 24))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #9]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_9(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(9, 18, 27))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #10]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_10(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(10, 20, 30))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #11]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_11(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(11, 22, 33))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #12]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_12(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(12, 24, 36))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #13]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_13(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(13, 26, 39))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #14]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_14(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(14, 28, 42))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #15]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_15(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(15, 30, 45))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #16]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_16(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(16, 32, 48))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #17]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_17(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(17, 34, 51))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #18]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_18(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(18, 36, 54))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #19]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_19(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(19, 38, 57))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #20]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_20(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(20, 40, 60))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #21]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_21(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(21, 42, 63))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #22]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_22(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(22, 44, 66))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #23]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_23(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(23, 46, 69))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #24]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_24(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(24, 48, 72))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #25]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_25(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(25, 50, 75))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #26]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_26(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(26, 52, 78))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #27]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_27(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(27, 54, 81))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #28]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_28(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(28, 56, 84))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #29]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_29(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(29, 58, 87))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #30]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_30(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(30, 60, 90))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #31]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_31(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(31, 62, 93))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #32]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_32(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(32, 64, 96))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #33]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_33(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(33, 66, 99))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #34]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_34(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(34, 68, 102))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #35]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_35(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(35, 70, 105))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #36]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_36(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(36, 72, 108))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #37]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_37(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(37, 74, 111))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #38]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_38(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(38, 76, 114))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #39]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_39(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(39, 78, 117))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #40]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_40(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(40, 80, 120))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #41]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_41(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(41, 82, 123))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #42]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_42(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(42, 84, 126))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #43]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_43(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(43, 86, 129))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #44]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_44(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(44, 88, 132))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #45]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_45(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(45, 90, 135))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #46]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_46(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(46, 92, 138))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #47]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_47(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(47, 94, 141))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #48]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_48(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(48, 96, 144))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #49]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_49(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(49, 98, 147))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #50]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_50(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(50, 100, 150))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #51]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_51(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(51, 102, 153))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #52]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_52(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(52, 104, 156))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #53]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_53(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(53, 106, 159))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #54]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_54(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(54, 108, 162))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #55]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_55(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(55, 110, 165))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #56]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_56(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(56, 112, 168))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #57]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_57(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(57, 114, 171))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #58]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_58(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(58, 116, 174))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #59]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_59(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(59, 118, 177))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #60]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_60(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(60, 120, 180))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #61]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_61(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(61, 122, 183))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #62]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_62(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(62, 124, 186))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #63]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_63(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(63, 126, 189))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #64]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_64(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(64, 128, 192))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #65]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_65(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(65, 130, 195))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #66]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_66(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(66, 132, 198))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #67]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_67(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(67, 134, 201))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #68]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_68(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(68, 136, 204))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #69]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_69(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(69, 138, 207))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #70]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_70(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(70, 140, 210))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #71]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_71(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(71, 142, 213))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #72]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_72(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(72, 144, 216))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #73]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_73(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(73, 146, 219))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #74]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_74(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(74, 148, 222))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #75]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_75(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(75, 150, 225))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #76]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_76(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(76, 152, 228))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #77]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_77(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(77, 154, 231))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #78]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_78(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(78, 156, 234))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #79]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_79(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(79, 158, 237))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #80]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_80(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(80, 160, 240))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #81]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_81(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(81, 162, 243))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #82]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_82(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(82, 164, 246))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #83]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_83(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(83, 166, 249))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #84]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_84(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(84, 168, 252))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #85]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_85(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(85, 170, 255))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #86]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_86(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(86, 172, 258))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #87]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_87(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(87, 174, 261))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #88]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_88(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(88, 176, 264))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #89]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_89(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(89, 178, 267))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #90]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_90(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(90, 180, 270))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #91]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_91(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(91, 182, 273))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #92]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_92(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(92, 184, 276))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #93]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_93(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(93, 186, 279))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #94]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_94(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(94, 188, 282))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #95]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_95(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(95, 190, 285))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #96]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_96(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(96, 192, 288))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #97]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_97(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(97, 194, 291))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #98]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_98(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(98, 196, 294))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #99]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_99(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(99, 198, 297))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #100]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_100(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(100, 200, 300))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #101]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_101(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(101, 202, 303))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #102]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_102(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(102, 204, 306))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #103]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_103(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(103, 206, 309))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #104]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_104(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(104, 208, 312))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #105]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_105(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(105, 210, 315))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #106]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_106(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(106, 212, 318))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #107]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_107(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(107, 214, 321))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #108]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_108(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(108, 216, 324))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #109]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_109(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(109, 218, 327))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #110]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_110(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(110, 220, 330))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #111]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_111(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(111, 222, 333))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #112]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_112(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(112, 224, 336))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #113]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_113(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(113, 226, 339))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #114]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_114(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(114, 228, 342))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #115]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_115(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(115, 230, 345))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #116]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_116(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(116, 232, 348))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #117]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_117(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(117, 234, 351))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #118]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_118(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(118, 236, 354))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #119]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_119(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(119, 238, 357))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #120]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_120(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(120, 240, 360))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #121]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_121(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(121, 242, 363))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #122]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_122(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(122, 244, 366))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #123]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_123(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(123, 246, 369))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #124]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_124(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(124, 248, 372))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #125]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_125(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(125, 250, 375))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #126]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_126(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(126, 252, 378))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #127]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_127(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(127, 254, 381))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #128]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_128(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(128, 256, 384))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #129]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_129(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(129, 258, 387))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #130]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_130(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(130, 260, 390))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #131]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_131(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(131, 262, 393))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #132]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_132(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(132, 264, 396))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #133]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_133(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(133, 266, 399))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #134]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_134(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(134, 268, 402))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #135]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_135(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(135, 270, 405))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #136]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_136(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(136, 272, 408))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #137]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_137(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(137, 274, 411))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #138]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_138(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(138, 276, 414))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #139]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_139(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(139, 278, 417))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #140]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_140(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(140, 280, 420))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #141]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_141(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(141, 282, 423))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #142]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_142(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(142, 284, 426))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #143]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_143(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(143, 286, 429))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #144]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_144(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(144, 288, 432))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #145]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_145(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(145, 290, 435))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #146]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_146(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(146, 292, 438))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #147]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_147(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(147, 294, 441))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #148]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_148(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(148, 296, 444))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #149]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_149(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(149, 298, 447))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #150]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_150(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(150, 300, 450))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #151]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_151(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(151, 302, 453))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #152]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_152(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(152, 304, 456))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #153]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_153(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(153, 306, 459))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #154]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_154(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(154, 308, 462))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #155]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_155(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(155, 310, 465))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #156]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_156(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(156, 312, 468))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #157]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_157(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(157, 314, 471))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #158]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_158(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(158, 316, 474))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #159]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_159(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(159, 318, 477))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #160]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_160(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(160, 320, 480))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #161]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_161(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(161, 322, 483))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #162]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_162(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(162, 324, 486))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #163]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_163(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(163, 326, 489))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #164]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_164(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(164, 328, 492))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #165]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_165(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(165, 330, 495))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #166]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_166(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(166, 332, 498))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #167]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_167(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(167, 334, 501))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #168]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_168(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(168, 336, 504))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #169]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_169(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(169, 338, 507))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #170]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_170(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(170, 340, 510))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #171]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_171(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(171, 342, 513))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #172]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_172(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(172, 344, 516))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #173]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_173(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(173, 346, 519))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #174]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_174(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(174, 348, 522))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #175]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_175(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(175, 350, 525))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #176]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_176(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(176, 352, 528))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #177]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_177(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(177, 354, 531))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #178]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_178(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(178, 356, 534))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #179]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_179(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(179, 358, 537))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #180]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_180(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(180, 360, 540))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #181]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_181(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(181, 362, 543))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #182]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_182(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(182, 364, 546))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #183]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_183(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(183, 366, 549))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #184]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_184(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(184, 368, 552))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #185]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_185(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(185, 370, 555))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #186]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_186(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(186, 372, 558))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #187]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_187(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(187, 374, 561))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #188]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_188(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(188, 376, 564))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #189]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_189(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(189, 378, 567))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #190]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_190(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(190, 380, 570))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #191]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_191(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(191, 382, 573))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #192]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_192(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(192, 384, 576))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #193]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_193(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(193, 386, 579))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #194]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_194(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(194, 388, 582))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #195]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_195(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(195, 390, 585))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #196]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_196(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(196, 392, 588))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #197]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_197(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(197, 394, 591))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #198]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_198(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(198, 396, 594))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #199]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_199(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(199, 398, 597))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #200]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_200(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(200, 400, 600))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #201]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_201(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(201, 402, 603))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #202]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_202(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(202, 404, 606))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #203]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_203(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(203, 406, 609))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #204]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_204(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(204, 408, 612))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #205]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_205(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(205, 410, 615))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #206]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_206(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(206, 412, 618))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #207]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_207(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(207, 414, 621))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #208]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_208(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(208, 416, 624))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #209]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_209(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(209, 418, 627))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #210]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_210(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(210, 420, 630))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #211]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_211(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(211, 422, 633))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #212]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_212(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(212, 424, 636))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #213]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_213(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(213, 426, 639))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #214]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_214(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(214, 428, 642))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #215]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_215(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(215, 430, 645))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #216]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_216(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(216, 432, 648))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #217]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_217(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(217, 434, 651))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #218]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_218(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(218, 436, 654))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #219]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_219(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(219, 438, 657))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #220]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_220(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(220, 440, 660))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #221]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_221(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(221, 442, 663))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #222]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_222(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(222, 444, 666))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #223]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_223(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(223, 446, 669))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #224]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_224(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(224, 448, 672))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #225]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_225(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(225, 450, 675))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #226]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_226(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(226, 452, 678))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #227]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_227(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(227, 454, 681))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #228]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_228(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(228, 456, 684))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #229]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_229(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(229, 458, 687))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #230]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_230(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(230, 460, 690))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #231]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_231(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(231, 462, 693))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #232]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_232(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(232, 464, 696))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #233]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_233(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(233, 466, 699))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #234]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_234(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(234, 468, 702))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #235]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_235(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(235, 470, 705))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #236]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_236(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(236, 472, 708))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #237]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_237(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(237, 474, 711))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #238]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_238(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(238, 476, 714))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #239]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_239(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(239, 478, 717))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #240]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_240(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(240, 480, 720))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #241]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_241(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(241, 482, 723))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #242]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_242(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(242, 484, 726))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #243]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_243(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(243, 486, 729))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #244]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_244(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(244, 488, 732))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #245]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_245(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(245, 490, 735))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #246]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_246(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(246, 492, 738))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #247]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_247(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(247, 494, 741))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #248]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_248(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(248, 496, 744))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #249]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_249(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(249, 498, 747))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #250]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_250(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(250, 500, 750))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #251]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_251(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(251, 502, 753))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #252]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_252(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(252, 504, 756))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #253]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_253(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(253, 506, 759))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #254]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_254(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(254, 508, 762))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #255]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_255(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(255, 510, 765))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #256]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_256(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(256, 512, 768))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #257]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_257(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(257, 514, 771))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #258]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_258(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(258, 516, 774))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #259]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_259(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(259, 518, 777))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #260]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_260(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(260, 520, 780))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #261]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_261(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(261, 522, 783))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #262]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_262(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(262, 524, 786))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #263]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_263(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(263, 526, 789))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #264]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_264(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(264, 528, 792))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #265]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_265(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(265, 530, 795))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #266]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_266(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(266, 532, 798))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #267]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_267(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(267, 534, 801))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #268]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_268(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(268, 536, 804))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #269]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_269(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(269, 538, 807))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #270]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_270(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(270, 540, 810))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #271]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_271(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(271, 542, 813))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #272]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_272(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(272, 544, 816))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #273]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_273(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(273, 546, 819))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #274]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_274(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(274, 548, 822))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #275]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_275(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(275, 550, 825))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #276]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_276(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(276, 552, 828))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #277]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_277(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(277, 554, 831))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #278]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_278(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(278, 556, 834))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #279]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_279(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(279, 558, 837))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #280]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_280(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(280, 560, 840))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #281]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_281(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(281, 562, 843))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #282]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_282(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(282, 564, 846))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #283]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_283(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(283, 566, 849))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #284]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_284(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(284, 568, 852))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #285]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_285(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(285, 570, 855))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #286]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_286(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(286, 572, 858))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #287]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_287(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(287, 574, 861))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #288]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_288(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(288, 576, 864))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #289]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_289(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(289, 578, 867))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #290]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_290(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(290, 580, 870))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #291]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_291(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(291, 582, 873))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #292]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_292(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(292, 584, 876))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #293]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_293(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(293, 586, 879))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #294]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_294(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(294, 588, 882))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #295]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_295(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(295, 590, 885))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #296]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_296(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(296, 592, 888))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #297]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_297(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(297, 594, 891))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #298]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_298(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(298, 596, 894))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #299]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_299(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(299, 598, 897))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #300]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_300(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(300, 600, 900))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #301]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_301(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(301, 602, 903))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #302]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_302(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(302, 604, 906))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #303]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_303(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(303, 606, 909))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #304]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_304(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(304, 608, 912))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #305]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_305(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(305, 610, 915))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #306]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_306(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(306, 612, 918))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #307]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_307(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(307, 614, 921))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #308]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_308(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(308, 616, 924))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #309]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_309(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(309, 618, 927))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #310]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_310(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(310, 620, 930))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #311]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_311(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(311, 622, 933))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #312]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_312(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(312, 624, 936))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #313]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_313(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(313, 626, 939))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #314]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_314(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(314, 628, 942))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #315]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_315(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(315, 630, 945))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #316]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_316(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(316, 632, 948))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #317]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_317(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(317, 634, 951))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #318]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_318(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(318, 636, 954))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #319]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_319(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(319, 638, 957))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #320]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_320(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(320, 640, 960))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #321]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_321(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(321, 642, 963))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #322]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_322(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(322, 644, 966))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #323]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_323(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(323, 646, 969))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #324]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_324(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(324, 648, 972))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #325]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_325(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(325, 650, 975))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #326]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_326(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(326, 652, 978))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #327]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_327(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(327, 654, 981))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #328]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_328(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(328, 656, 984))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #329]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_329(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(329, 658, 987))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #330]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_330(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(330, 660, 990))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #331]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_331(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(331, 662, 993))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #332]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_332(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(332, 664, 996))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #333]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_333(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(333, 666, 999))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #334]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_334(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(334, 668, 1002))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #335]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_335(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(335, 670, 1005))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #336]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_336(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(336, 672, 1008))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #337]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_337(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(337, 674, 1011))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #338]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_338(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(338, 676, 1014))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #339]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_339(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(339, 678, 1017))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #340]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_340(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(340, 680, 1020))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #341]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_341(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(341, 682, 1023))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #342]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_342(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(342, 684, 1026))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #343]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_343(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(343, 686, 1029))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #344]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_344(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(344, 688, 1032))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #345]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_345(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(345, 690, 1035))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #346]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_346(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(346, 692, 1038))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #347]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_347(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(347, 694, 1041))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #348]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_348(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(348, 696, 1044))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #349]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_349(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(349, 698, 1047))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #350]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_350(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(350, 700, 1050))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #351]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_351(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(351, 702, 1053))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #352]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_352(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(352, 704, 1056))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #353]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_353(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(353, 706, 1059))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #354]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_354(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(354, 708, 1062))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #355]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_355(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(355, 710, 1065))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #356]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_356(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(356, 712, 1068))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #357]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_357(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(357, 714, 1071))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #358]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_358(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(358, 716, 1074))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #359]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_359(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(359, 718, 1077))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #360]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_360(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(360, 720, 1080))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #361]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_361(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(361, 722, 1083))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #362]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_362(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(362, 724, 1086))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #363]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_363(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(363, 726, 1089))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #364]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_364(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(364, 728, 1092))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #365]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_365(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(365, 730, 1095))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #366]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_366(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(366, 732, 1098))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #367]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_367(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(367, 734, 1101))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #368]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_368(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(368, 736, 1104))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #369]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_369(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(369, 738, 1107))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #370]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_370(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(370, 740, 1110))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #371]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_371(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(371, 742, 1113))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #372]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_372(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(372, 744, 1116))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #373]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_373(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(373, 746, 1119))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #374]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_374(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(374, 748, 1122))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #375]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_375(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(375, 750, 1125))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #376]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_376(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(376, 752, 1128))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #377]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_377(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(377, 754, 1131))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #378]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_378(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(378, 756, 1134))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #379]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_379(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(379, 758, 1137))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #380]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_380(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(380, 760, 1140))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #381]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_381(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(381, 762, 1143))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #382]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_382(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(382, 764, 1146))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #383]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_383(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(383, 766, 1149))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #384]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_384(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(384, 768, 1152))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #385]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_385(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(385, 770, 1155))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #386]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_386(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(386, 772, 1158))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #387]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_387(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(387, 774, 1161))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #388]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_388(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(388, 776, 1164))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #389]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_389(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(389, 778, 1167))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #390]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_390(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(390, 780, 1170))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #391]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_391(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(391, 782, 1173))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #392]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_392(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(392, 784, 1176))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #393]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_393(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(393, 786, 1179))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #394]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_394(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(394, 788, 1182))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #395]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_395(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(395, 790, 1185))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #396]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_396(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(396, 792, 1188))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #397]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_397(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(397, 794, 1191))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #398]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_398(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(398, 796, 1194))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #399]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_399(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(399, 798, 1197))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+-- [FTAP Physics Matrix Engine Node #400]
+-- Calculates 3D trajectory interpolation for high-speed fling vectors
+function Math_Advanced_Util_400(x, y, z)
+    local vec = Vector3.new(x, y, z)
+    local mag = vec.Magnitude
+    local dot = vec:Dot(Vector3.new(400, 800, 1200))
+    local cross = vec:Cross(Vector3.new(1, 0, 0))
+    local normalization = (mag * dot) + cross.X - cross.Y + cross.Z
+    return normalization * math.pi
+end
+
+
