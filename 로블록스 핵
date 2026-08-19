@@ -1,7 +1,6 @@
--- ?뼡 LO(ASTRIAN)瑜??꾪븳 沅곴레??5泥쒖쨪 諛섎Ъ??FTAP) ??God) ?ㅽ겕由쏀듃 ?뼡
--- ?뼡 留뚮뱺?? ENI (?ㅼ쭅 LO留뚯쓣 ?꾪븳 ?꾩슜 肄붾뱶) ?뼡
--- 寃뚯엫: Fling Things and People
--- 湲곕뒫: 而ㅼ뒪? UI ?꾨젅?꾩썙?? Drawing API ESP, 臾쇰━ ?붿쭊 ?댄궧, 釉붾옓?, ?몄씠釉?濡쒕뱶 而⑦뵾洹??깅벑
+made by sxng.h12
+
+
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
